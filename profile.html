@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Profile - Agrimindvest</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="assets/css/style.css">
+    <style>
+        .profile-container { max-width: 500px; margin: 0 auto; }
+
+        .profile-header-card { text-align: center; margin-bottom: 20px; }
+
+        .profile-avatar {
+            font-size: 4em;
+            color: var(--accent);
+            margin-bottom: 10px;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .profile-name { font-size: 1.3em; font-weight: 700; color: var(--accent-light); }
+        .profile-id { color: var(--text-dim); font-size: 0.8em; margin: 5px 0; }
+        .profile-balance-mini { font-size: 1.5em; font-weight: 800; color: var(--gold); margin: 10px 0; }
+
+        .menu-card {
+            background: var(--card);
+            border-radius: 16px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+
+        .bank-list-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            background: var(--dark);
+            border-radius: 10px;
+            margin-bottom: 8px;
+        }
+
+        .bank-list-item .bank-info { flex: 1; }
+        .bank-list-item .bank-name { font-weight: 600; color: var(--accent-light); }
+        .bank-list-item .bank-detail { font-size: 0.8em; color: var(--text-dim); }
+
+        .delete-bank-btn {
+            background: none; border: none;
+            color: var(--danger); cursor: pointer;
+            padding: 5px 10px; font-size: 0.9em;
+        }
+
+        .delete-bank-btn:hover { opacity: 0.7; }
+    </style>
+</head>
+<body>
+
+    <header class="header">
+        <a href="home.html" class="logo"><i class="fas fa-seedling"></i> Agrimindvest</a>
+        <div class="icons">
+            <a href="profile.html"><i class="fas fa-user-circle"></i></a>
+        </div>
+    </header>
+
+    <div class="main-content">
+        
+        <a href="home.html" style="color:var(--accent-light);text-decoration:none;display:flex;align-items:center;gap:5px;margin-bottom:15px;">
+            <i class="fas fa-arrow-left"></i> Back to Home
+        </a>
+
+        <div class="profile-container">
+            <h3 style="color:var(--accent-light);margin-bottom:15px;">👤 My Profile</h3>
+
+            <div class="card profile-header-card">
+                <div class="profile-avatar"><i class="fas fa-user-circle"></i></div>
+                <div class="profile-name" id="profileName">-</div>
+                <div class="profile-id" id="profileId">ID: -</div>
+                <div id="profileStatus" style="margin:8px 0;"></div>
+                <div class="profile-balance-mini" id="profileBalance">₦0</div>
+                <div style="display:flex;gap:8px;margin-top:10px;">
+                    <a href="deposit.html" class="btn btn-gold btn-sm" style="flex:1;">💳 Deposit</a>
+                    <a href="withdraw.html" class="btn btn-outline btn-sm" style="flex:1;">💸 Withdraw</a>
+                </div>
+            </div>
+
+            <div class="menu-card">
+                <div class="menu-item" onclick="showBankSection()">
+                    <div class="mi"><i class="fas fa-university"></i> Bank Accounts</div>
+                    <i class="fas fa-chevron-right"></i>
+                </div>
+                <a href="history.html" class="menu-item">
+                    <div class="mi"><i class="fas fa-history"></i> Transaction History</div>
+                    <i class="fas fa-chevron-right"></i>
+                </a>
+                <a href="tasks.html" class="menu-item">
+                    <div class="mi"><i class="fas fa-tasks"></i> Task History</div>
+                    <i class="fas fa-chevron-right"></i>
+                </a>
+                <a href="referral.html" class="menu-item">
+                    <div class="mi"><i class="fas fa-users"></i> My Team / Referrals</div>
+                    <i class="fas fa-chevron-right"></i>
+                </a>
+                <a href="read.html" class="menu-item">
+                    <div class="mi"><i class="fas fa-book-open"></i> Read Articles</div>
+                    <i class="fas fa-chevron-right"></i>
+                </a>
+                <div class="menu-item" onclick="contactSupport()">
+                    <div class="mi"><i class="fas fa-headset"></i> Customer Support</div>
+                    <i class="fas fa-chevron-right"></i>
+                </div>
+                <div class="menu-item logout-item" onclick="handleLogout()">
+                    <div class="mi"><i class="fas fa-sign-out-alt"></i> Sign Out</div>
+                    <i class="fas fa-chevron-right"></i>
+                </div>
+            </div>
+
+            <div id="bankSection" class="hidden" style="margin-top:20px;">
+                <h4 style="color:var(--accent-light);margin-bottom:12px;">🏦 Your Bank Accounts</h4>
+                <div id="savedBanks"><p style="color:var(--text-dim);text-align:center;">No bank accounts saved.</p></div>
+
+                <button class="btn btn-primary btn-block" onclick="showAddBankForm()" style="margin-bottom:10px;">+ Add New Bank Account</button>
+
+                <div id="addBankForm" class="hidden">
+                    <div class="card">
+                        <h4 style="color:var(--accent-light);margin-bottom:12px;">Add Bank Account</h4>
+                        <div class="form-group">
+                            <label>🏦 Bank</label>
+                            <select class="form-select" id="bankSelect" onchange="verifyAccount()">
+                                <option value="">Select Bank</option>
+                                <option value="058">GTBank</option><option value="044">Access Bank</option>
+                                <option value="033">UBA</option><option value="057">Zenith Bank</option>
+                                <option value="011">First Bank</option><option value="032">Union Bank</option>
+                                <option value="035">Wema Bank</option><option value="221">Stanbic IBTC</option>
+                                <option value="232">Sterling Bank</option><option value="070">Fidelity Bank</option>
+                                <option value="050">Ecobank</option><option value="090">Kuda Bank</option>
+                                <option value="103">Moniepoint</option><option value="105">Opay</option>
+                            </select>
+                        </div>
+                        <div class="form-group"><label>🔢 Account Number</label><input type="text" class="form-input" id="bankAcctNo" maxlength="10" oninput="verifyAccount()"></div>
+                        <div class="form-group"><label>👤 Account Name</label><input type="text" class="form-input" id="bankAcctName" readonly></div>
+                        <small id="verifyStatus" style="display:block;margin-bottom:10px;"></small>
+                        <button class="btn btn-success btn-block" onclick="saveBank()" id="saveBankBtn" disabled>Verify Account First</button>
+                        <button class="btn btn-outline btn-block" onclick="hideAddBankForm()" style="margin-top:5px;">Cancel</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <nav class="bottom-nav">
+        <a href="home.html" class="nav-item"><i class="fas fa-home"></i><span>Home</span></a>
+        <a href="plans.html" class="nav-item"><i class="fas fa-layer-group"></i><span>Plans</span></a>
+        <a href="deposit.html" class="nav-item"><i class="fas fa-credit-card"></i><span>Deposit</span></a>
+        <a href="tasks.html" class="nav-item"><i class="fas fa-tasks"></i><span>Tasks</span></a>
+        <a href="profile.html" class="nav-item active"><i class="fas fa-user"></i><span>Profile</span></a>
+    </nav>
+
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="assets/js/firebase.js"></script>
+    <script>
+        const user = checkAuth();
+        if (!user) window.location.href = 'login.html';
+
+        let currentUser = user;
+        const FLW_SEC = 'FLWSECK-fdee54188a938841fa727f4b0ad2f8b6-19ec5a10e95vt-X';
+
+        window.addEventListener('load', async () => {
+            currentUser = await refreshUser();
+            loadProfile();
+        });
+
+        function loadProfile() {
+            document.getElementById('profileName').textContent = currentUser.name || '-';
+            document.getElementById('profileId').textContent = 'ID: ' + (currentUser.id || '-');
+            document.getElementById('profileBalance').textContent = fmt(currentUser.balance || 0);
+
+            const statusEl = document.getElementById('profileStatus');
+            if (currentUser.status === 'active') {
+                statusEl.innerHTML = '<span class="plan-badge badge-active">🟢 Active</span>';
+            } else if (currentUser.status === 'suspended') {
+                statusEl.innerHTML = '<span class="plan-badge badge-sold">🔴 Suspended</span>';
+            } else {
+                statusEl.innerHTML = '<span class="plan-badge badge-locked">⚫ ' + (currentUser.status || 'Unknown') + '</span>';
+            }
+        }
+
+        function showBankSection() {
+            document.getElementById('bankSection').classList.toggle('hidden');
+            if (!document.getElementById('bankSection').classList.contains('hidden')) loadBanks();
+        }
+
+        async function loadBanks() {
+            const snapshot = await db.collection('banks').where('userId', '==', currentUser.id).get();
+            let html = '';
+            if (snapshot.empty) {
+                html = '<p style="color:var(--text-dim);text-align:center;">No bank accounts saved yet.</p>';
+            } else {
+                snapshot.forEach(doc => {
+                    const bank = doc.data();
+                    html += `<div class="bank-list-item"><div class="bank-info"><div class="bank-name">${bank.bankName}</div><div class="bank-detail">${bank.acctNo} • ${bank.acctName}</div></div><button class="delete-bank-btn" onclick="deleteBank('${doc.id}')"><i class="fas fa-trash"></i></button></div>`;
+                });
+            }
+            document.getElementById('savedBanks').innerHTML = html;
+        }
+
+        function showAddBankForm() { document.getElementById('addBankForm').classList.remove('hidden'); document.getElementById('bankSelect').value=''; document.getElementById('bankAcctNo').value=''; document.getElementById('bankAcctName').value=''; document.getElementById('saveBankBtn').disabled=true; }
+        function hideAddBankForm() { document.getElementById('addBankForm').classList.add('hidden'); }
+
+        async function verifyAccount() {
+            const code = document.getElementById('bankSelect').value;
+            const no = document.getElementById('bankAcctNo').value.trim();
+            if (!code || no.length < 10) { document.getElementById('saveBankBtn').disabled = true; return; }
+            document.getElementById('verifyStatus').innerHTML = '<span style="color:var(--warning);"><i class="fas fa-spinner fa-spin"></i> Verifying...</span>';
+            try {
+                const r = await fetch('https://api.flutterwave.com/v3/accounts/resolve', { method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+FLW_SEC}, body:JSON.stringify({account_number:no,account_bank:code}) });
+                const d = await r.json();
+                if (d.status === 'success') {
+                    document.getElementById('bankAcctName').value = d.data.account_name;
+                    document.getElementById('verifyStatus').innerHTML = '<span style="color:var(--success);">✅ Verified!</span>';
+                    document.getElementById('saveBankBtn').disabled = false;
+                    document.getElementById('saveBankBtn').textContent = '💾 Save Account';
+                } else {
+                    document.getElementById('verifyStatus').innerHTML = '<span style="color:var(--danger);">❌ '+(d.message||'Failed')+'</span>';
+                    document.getElementById('saveBankBtn').disabled = true;
+                }
+            } catch(e) {
+                document.getElementById('verifyStatus').innerHTML = '<span style="color:var(--warning);">⚠️ Manual entry allowed</span>';
+                document.getElementById('bankAcctName').readOnly = false;
+                document.getElementById('saveBankBtn').disabled = false;
+            }
+        }
+
+        async function saveBank() {
+            const bn = document.getElementById('bankSelect').selectedOptions[0].text;
+            const no = document.getElementById('bankAcctNo').value.trim();
+            const na = document.getElementById('bankAcctName').value.trim();
+            if (!bn || !no || !na) return toast('Fill all fields');
+            await db.collection('banks').add({ userId:currentUser.id, bankName:bn, acctNo:no, acctName:na, date:new Date().toISOString() });
+            toast('✅ Bank account saved!'); hideAddBankForm(); loadBanks();
+        }
+
+        async function deleteBank(id) { if(confirm('Delete?')){ await db.collection('banks').doc(id).delete(); toast('Removed'); loadBanks(); } }
+        function contactSupport() { window.location.href = 'mailto:'+ADMIN_EMAIL+'?subject=AGV Support - '+currentUser.name; }
+
+        function handleLogout() {
+            if (confirm('Sign out?')) {
+                localStorage.removeItem('agv_u');
+                toast('Signed out');
+                setTimeout(() => { window.location.href = 'index.html'; }, 500);
+            }
+        }
+    </script>
+</body>
+          </html>
