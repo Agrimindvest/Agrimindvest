@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Deposit - Agrimindvest</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="assets/css/style.css">
+    <style>
+        .deposit-container {
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        .bank-details-card {
+            background: var(--dark);
+            border: 2px solid var(--accent);
+            border-radius: 16px;
+            padding: 20px;
+            margin: 20px 0;
+            animation: fadeSlideUp 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes fadeSlideUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .bank-detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .bank-detail-row:last-child { border-bottom: none; }
+
+        .bank-label { color: var(--text-dim); font-size: 0.85em; }
+        .bank-value { color: var(--text); font-weight: 600; font-size: 0.9em; text-align: right; }
+
+        .ref-box {
+            background: rgba(255,193,7,0.1);
+            border: 2px dashed var(--gold);
+            border-radius: 12px;
+            padding: 15px;
+            text-align: center;
+            margin: 15px 0;
+            animation: fadeSlideUp 0.5s ease 0.2s forwards;
+            opacity: 0;
+        }
+
+        .ref-code-large {
+            font-size: 1.4em;
+            font-weight: 800;
+            color: var(--gold);
+            letter-spacing: 2px;
+        }
+
+        .warning-box {
+            background: rgba(244,67,54,0.1);
+            border: 1px solid var(--danger);
+            border-radius: 10px;
+            padding: 12px;
+            margin: 15px 0;
+            font-size: 0.8em;
+            color: var(--danger);
+        }
+
+        .warning-box i { margin-right: 6px; }
+
+        .step-indicator {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .step-dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: var(--border);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .step-dot.active {
+            background: var(--accent);
+            box-shadow: 0 0 15px rgba(76,175,80,0.5);
+            transform: scale(1.3);
+        }
+
+        .step-dot.done {
+            background: var(--success);
+            transform: scale(1.1);
+        }
+
+        .copy-btn {
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .copy-btn:active { transform: scale(0.95); }
+
+        .success-checkmark {
+            animation: checkDraw 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes checkDraw {
+            from { transform: scale(0) rotate(-45deg); opacity: 0; }
+            to { transform: scale(1) rotate(0); opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <header class="header">
+        <a href="home.html" class="logo"><i class="fas fa-seedling"></i> Agrimindvest</a>
+        <div class="icons">
+            <a href="profile.html"><i class="fas fa-user-circle"></i></a>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        
+        <!-- Back Button -->
+        <a href="home.html" style="color:var(--accent-light);text-decoration:none;display:flex;align-items:center;gap:5px;margin-bottom:15px;">
+            <i class="fas fa-arrow-left"></i> Back to Home
+        </a>
+
+        <div class="deposit-container">
+            
+            <!-- Step Indicators -->
+            <div class="step-indicator">
+                <div class="step-dot active" id="stepDot1"></div>
+                <div class="step-dot" id="stepDot2"></div>
+                <div class="step-dot" id="stepDot3"></div>
+            </div>
+
+            <!-- STEP 1: Enter Amount -->
+            <div id="step1">
+                <h3 style="color:var(--accent-light);margin-bottom:10px;">💳 Fund Your Wallet</h3>
+                <p style="color:var(--text-dim);margin-bottom:20px;">Enter the amount you want to deposit</p>
+
+                <div class="card">
+                    <div class="form-group">
+                        <label>💰 Amount (Min: ₦5,000)</label>
+                        <input type="number" class="form-input" id="depAmt" placeholder="Enter amount" min="5000">
+                    </div>
+
+                    <button class="btn btn-primary btn-block" onclick="generateDetails()">
+                        GENERATE PAYMENT DETAILS
+                    </button>
+                </div>
+            </div>
+
+            <!-- STEP 2: Bank Details -->
+            <div id="step2" class="hidden">
+                <h3 style="color:var(--accent-light);margin-bottom:10px;">🏦 Payment Details</h3>
+                <p style="color:var(--text-dim);margin-bottom:5px;">Transfer the exact amount using the details below</p>
+
+                <!-- Loading -->
+                <div id="loadingSection">
+                    <div class="spinner"></div>
+                    <p style="text-align:center;color:var(--text-dim);">⏳ Generating one-time account...</p>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill" style="width:0%;"></div>
+                    </div>
+                </div>
+
+                <!-- Bank Details -->
+                <div id="detailsSection" class="hidden">
+                    <div class="bank-details-card">
+                        <div class="bank-detail-row">
+                            <span class="bank-label">🏦 Bank:</span>
+                            <span class="bank-value">Safe Haven Microfinance Bank</span>
+                        </div>
+                        <div class="bank-detail-row">
+                            <span class="bank-label">🔢 Account No:</span>
+                            <span class="bank-value" id="displayAccount">5012552807</span>
+                        </div>
+                        <div class="bank-detail-row">
+                            <span class="bank-label">👤 Account Name:</span>
+                            <span class="bank-value">PEERPURSETECHNO</span>
+                        </div>
+                    </div>
+
+                    <!-- Reference Code -->
+                    <div class="ref-box">
+                        <p style="color:var(--text-dim);font-size:0.8em;margin-bottom:5px;">⚠️ YOU MUST USE THIS EXACT DESCRIPTION</p>
+                        <div class="ref-code-large" id="displayRef">AGV-DEP-XXXXXX</div>
+                        <button class="btn btn-primary btn-sm copy-btn" onclick="copyRef()" style="margin-top:10px;">
+                            <i class="fas fa-copy"></i> Copy Description
+                        </button>
+                    </div>
+
+                    <!-- Warning -->
+                    <div class="warning-box">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        If you don't use this exact description, your deposit may be delayed or rejected.
+                    </div>
+
+                    <button class="btn btn-gold btn-block" onclick="showConfirmStep()">
+                        ✅ I HAVE MADE THE PAYMENT
+                    </button>
+                </div>
+            </div>
+
+            <!-- STEP 3: Confirmation Form -->
+            <div id="step3" class="hidden">
+                <h3 style="color:var(--accent-light);margin-bottom:10px;">📋 Confirm Your Transfer</h3>
+                <p style="color:var(--text-dim);margin-bottom:20px;">Provide your bank details for verification</p>
+
+                <div class="card">
+                    <div class="form-group">
+                        <label>👤 Your Name (as on bank account)</label>
+                        <input type="text" class="form-input" id="payerName" placeholder="Enter your bank account name">
+                    </div>
+
+                    <div class="form-group">
+                        <label>🏦 Account Number you transferred from</label>
+                        <input type="text" class="form-input" id="payerAccount" placeholder="Enter your account number">
+                    </div>
+
+                    <div class="form-group">
+                        <label>📝 Description Used</label>
+                        <input type="text" class="form-input" id="confirmRef" readonly style="background:var(--darker);">
+                    </div>
+
+                    <button class="btn btn-gold btn-block" onclick="submitDeposit()">
+                        ✅ CONFIRM & SUBMIT
+                    </button>
+                </div>
+            </div>
+
+            <!-- SUCCESS -->
+            <div id="stepSuccess" class="hidden">
+                <div class="card" style="text-align:center;">
+                    <div class="result-icon success-checkmark">✅</div>
+                    <h3 style="color:var(--success);">Deposit Submitted!</h3>
+                    <div style="font-size:1.5em;font-weight:800;color:var(--gold);margin:10px 0;" id="successAmount">₦0</div>
+                    <p style="color:var(--text-dim);">Reference: <strong id="successRef">-</strong></p>
+                    
+                    <div style="margin:15px 0;padding:15px;background:rgba(255,152,0,0.1);border-radius:10px;">
+                        <p style="color:var(--warning);font-weight:600;">⏳ Verification: 0-30 minutes</p>
+                        <p style="color:var(--text-dim);font-size:0.85em;">Admin will verify your payment shortly</p>
+                    </div>
+
+                    <p style="color:var(--text-dim);font-size:0.85em;">Status: <span class="status-pending">⏳ Pending Approval</span></p>
+
+                    <a href="home.html" class="btn btn-primary btn-block" style="margin-top:15px;">Back to Home</a>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav">
+        <a href="home.html" class="nav-item"><i class="fas fa-home"></i><span>Home</span></a>
+        <a href="plans.html" class="nav-item"><i class="fas fa-layer-group"></i><span>Plans</span></a>
+        <a href="deposit.html" class="nav-item active"><i class="fas fa-credit-card"></i><span>Deposit</span></a>
+        <a href="tasks.html" class="nav-item"><i class="fas fa-tasks"></i><span>Tasks</span></a>
+        <a href="profile.html" class="nav-item"><i class="fas fa-user"></i><span>Profile</span></a>
+    </nav>
+
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="assets/js/firebase.js"></script>
+    <script>
+        // ============ CHECK AUTH ============
+        const user = checkAuth();
+        if (!user) { window.location.href = 'login.html'; }
+
+        let currentUser = user;
+        let depositRef = '';
+        let depositAmount = 0;
+
+        // ============ GENERATE DETAILS ============
+        function generateDetails() {
+            const amount = parseInt(document.getElementById('depAmt').value);
+            
+            if (!amount || amount < MIN_DEPOSIT) {
+                return toast('Minimum deposit is ₦' + MIN_DEPOSIT.toLocaleString());
+            }
+
+            depositAmount = amount;
+            depositRef = generateRef('AGV-DEP');
+
+            // Show step 2
+            document.getElementById('step1').classList.add('hidden');
+            document.getElementById('step2').classList.remove('hidden');
+            document.getElementById('stepDot1').classList.add('done');
+            document.getElementById('stepDot2').classList.add('active');
+
+            // Loading animation
+            document.getElementById('loadingSection').classList.remove('hidden');
+            document.getElementById('detailsSection').classList.add('hidden');
+
+            const progressFill = document.getElementById('progressFill');
+            let width = 0;
+            const interval = setInterval(() => {
+                width += 5;
+                progressFill.style.width = width + '%';
+                if (width >= 100) {
+                    clearInterval(interval);
+                    document.getElementById('loadingSection').classList.add('hidden');
+                    document.getElementById('detailsSection').classList.remove('hidden');
+                    document.getElementById('displayRef').textContent = depositRef;
+                }
+            }, 250);
+        }
+
+        // ============ COPY REFERENCE ============
+        function copyRef() {
+            navigator.clipboard.writeText(depositRef).then(() => {
+                toast('📋 Description copied! Use this in your transfer.');
+            }).catch(() => {
+                toast('Please copy manually: ' + depositRef);
+            });
+        }
+
+        // ============ SHOW CONFIRM STEP ============
+        function showConfirmStep() {
+            document.getElementById('step2').classList.add('hidden');
+            document.getElementById('step3').classList.remove('hidden');
+            document.getElementById('confirmRef').value = depositRef;
+            document.getElementById('stepDot2').classList.add('done');
+            document.getElementById('stepDot3').classList.add('active');
+        }
+
+        // ============ SUBMIT DEPOSIT ============
+        async function submitDeposit() {
+            const payerName = document.getElementById('payerName').value.trim();
+            const payerAccount = document.getElementById('payerAccount').value.trim();
+
+            if (!payerName || !payerAccount) {
+                return toast('Please fill all fields');
+            }
+
+            try {
+                await db.collection('deposits').add({
+                    userId: currentUser.id,
+                    userName: currentUser.name,
+                    amount: depositAmount,
+                    ref: depositRef,
+                    payerName: payerName,
+                    payerAccount: payerAccount,
+                    bankName: DEPOSIT_BANK,
+                    accountNo: DEPOSIT_ACCOUNT,
+                    accountName: DEPOSIT_NAME,
+                    date: new Date().toISOString(),
+                    status: 'pending',
+                    channel: 'manual'
+                });
+
+                document.getElementById('step3').classList.add('hidden');
+                document.getElementById('stepSuccess').classList.remove('hidden');
+                document.getElementById('successAmount').textContent = fmt(depositAmount);
+                document.getElementById('successRef').textContent = depositRef;
+                document.getElementById('stepDot3').classList.add('done');
+
+                sendAdminEmail(
+                    '💰 NEW DEPOSIT - ' + currentUser.name,
+                    'NEW DEPOSIT PENDING\n\n' +
+                    'User: ' + currentUser.name + ' (' + currentUser.id + ')\n' +
+                    'Amount: ₦' + depositAmount.toLocaleString() + '\n' +
+                    'Reference: ' + depositRef + '\n' +
+                    'Payer Name: ' + payerName + '\n' +
+                    'Payer Account: ' + payerAccount + '\n' +
+                    'Date: ' + new Date().toLocaleString() + '\n\n' +
+                    'Action: Login to admin panel to approve/reject'
+                );
+
+                toast('✅ Deposit submitted! Awaiting verification.');
+
+            } catch (error) {
+                console.error('Deposit error:', error);
+                toast('Error submitting deposit. Please try again.');
+            }
+        }
+
+        // ============ INIT ============
+        window.addEventListener('load', async () => {
+            currentUser = await refreshUser();
+        });
+    </script>
+</body>
+          </html>
