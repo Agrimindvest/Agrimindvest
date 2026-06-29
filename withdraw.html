@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Withdraw - Agrimindvest</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="assets/css/style.css">
+    <style>
+        .withdraw-container { max-width: 500px; margin: 0 auto; }
+
+        .blocked-card {
+            background: rgba(244,67,54,0.1);
+            border: 2px solid var(--danger);
+            border-radius: 16px;
+            padding: 25px;
+            text-align: center;
+            margin: 20px 0;
+            animation: shake 0.6s;
+        }
+
+        .blocked-card .blocked-icon {
+            font-size: 3em;
+            color: var(--danger);
+            margin-bottom: 10px;
+        }
+
+        .summary-card {
+            background: var(--dark);
+            border: 1px solid var(--accent);
+            border-radius: 12px;
+            padding: 15px;
+            margin: 15px 0;
+            animation: fadeSlideUp 0.4s ease;
+        }
+
+        @keyframes fadeSlideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .summary-row:last-child { border-bottom: none; font-weight: 700; }
+        .summary-row .negative { color: var(--danger); }
+        .summary-row .positive { color: var(--success); }
+
+        .bank-select-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px;
+            background: var(--card);
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .bank-select-item:hover { border-color: var(--accent); transform: translateX(3px); }
+
+        .bank-select-item.selected {
+            border-color: var(--accent);
+            background: rgba(76,175,80,0.1);
+        }
+
+        .bank-select-item .radio-circle {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 2px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: all 0.3s;
+        }
+
+        .bank-select-item.selected .radio-circle {
+            border-color: var(--accent);
+        }
+
+        .bank-select-item.selected .radio-circle::after {
+            content: '';
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--accent);
+            animation: popIn 0.3s ease;
+        }
+
+        @keyframes popIn {
+            from { transform: scale(0); }
+            to { transform: scale(1); }
+        }
+
+        .live-calc { transition: all 0.3s; }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <header class="header">
+        <a href="home.html" class="logo"><i class="fas fa-seedling"></i> Agrimindvest</a>
+        <div class="icons">
+            <a href="profile.html"><i class="fas fa-user-circle"></i></a>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        
+        <a href="home.html" style="color:var(--accent-light);text-decoration:none;display:flex;align-items:center;gap:5px;margin-bottom:15px;">
+            <i class="fas fa-arrow-left"></i> Back to Home
+        </a>
+
+        <div class="withdraw-container">
+
+            <!-- BLOCKED -->
+            <div id="blockedSection" class="hidden">
+                <div class="blocked-card">
+                    <div class="blocked-icon">❌</div>
+                    <h3 style="color:var(--danger);margin-bottom:10px;">Withdrawal Blocked</h3>
+                    <p style="color:var(--text-dim);margin-bottom:20px;">You need an active investment plan to withdraw your earnings.</p>
+                    <a href="plans.html" class="btn btn-primary btn-block">📋 View Plans</a>
+                </div>
+            </div>
+
+            <!-- WITHDRAW FORM -->
+            <div id="withdrawSection">
+                <h3 style="color:var(--accent-light);margin-bottom:10px;">💸 Withdraw Your Earnings</h3>
+
+                <div class="card card-balance" style="margin-bottom:20px;">
+                    <div style="font-size:0.85em;color:var(--accent-light);">💰 AVAILABLE BALANCE</div>
+                    <div class="amount" id="withdrawBalance">₦0</div>
+                </div>
+
+                <div class="card">
+                    <div class="form-group">
+                        <label>💸 Amount (Min: ₦500 • Once daily)</label>
+                        <input type="number" class="form-input" id="wAmt" placeholder="Enter amount" min="500" oninput="calculateFee()">
+                    </div>
+
+                    <div class="summary-card hidden" id="summaryCard">
+                        <div class="summary-row"><span>Requested Amount:</span><span id="sumRequested">₦0</span></div>
+                        <div class="summary-row"><span>Processing Fee (15%):</span><span class="negative" id="sumFee">-₦0</span></div>
+                        <div class="summary-row"><span>You Will Receive:</span><span class="positive" id="sumNet">₦0</span></div>
+                    </div>
+                </div>
+
+                <div class="card" id="bankSelectionCard">
+                    <h4 style="color:var(--text-dim);margin-bottom:12px;">🏦 Select Bank Account</h4>
+                    <div id="bankList"><p style="color:var(--text-dim);text-align:center;">Loading accounts...</p></div>
+                    <a href="profile.html" style="color:var(--accent-light);font-size:0.85em;display:block;text-align:center;margin-top:8px;">+ Add New Bank Account</a>
+                </div>
+
+                <div class="info-box" style="margin-top:15px;">
+                    <h4>⚠️ IMPORTANT NOTES</h4>
+                    <ul>
+                        <li><i class="fas fa-clock"></i> Processing Time: 0-72 hours</li>
+                        <li><i class="fas fa-tasks"></i> Your tasks will be reviewed by admin</li>
+                        <li><i class="fas fa-percent"></i> 15% processing fee applies</li>
+                        <li><i class="fas fa-calendar-check"></i> Once daily withdrawals only</li>
+                        <li><i class="fas fa-envelope"></i> Confirmation sent to your email</li>
+                    </ul>
+                </div>
+
+                <button class="btn btn-gold btn-block" onclick="requestWithdrawal()">💸 REQUEST WITHDRAWAL</button>
+            </div>
+
+            <!-- SUCCESS -->
+            <div id="successSection" class="hidden">
+                <div class="card" style="text-align:center;">
+                    <div class="result-icon success-checkmark">✅</div>
+                    <h3 style="color:var(--success);">Withdrawal Submitted!</h3>
+                    
+                    <div class="summary-card">
+                        <div class="summary-row"><span>Amount:</span><span id="successAmount">₦0</span></div>
+                        <div class="summary-row"><span>Fee:</span><span class="negative" id="successFee">-₦0</span></div>
+                        <div class="summary-row"><span>You'll Receive:</span><span class="positive" id="successNet">₦0</span></div>
+                    </div>
+
+                    <div style="margin:15px 0;padding:15px;background:rgba(255,152,0,0.1);border-radius:10px;">
+                        <p style="color:var(--warning);font-weight:600;">⏳ Processing: 0-72 hours</p>
+                        <p style="color:var(--text-dim);font-size:0.85em;">Admin will review your tasks before approval</p>
+                    </div>
+
+                    <p style="color:var(--text-dim);font-size:0.85em;">Status: <span class="status-pending">⏳ Pending</span></p>
+                    <a href="home.html" class="btn btn-primary btn-block" style="margin-top:15px;">Back to Home</a>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav">
+        <a href="home.html" class="nav-item"><i class="fas fa-home"></i><span>Home</span></a>
+        <a href="plans.html" class="nav-item"><i class="fas fa-layer-group"></i><span>Plans</span></a>
+        <a href="deposit.html" class="nav-item"><i class="fas fa-credit-card"></i><span>Deposit</span></a>
+        <a href="tasks.html" class="nav-item"><i class="fas fa-tasks"></i><span>Tasks</span></a>
+        <a href="profile.html" class="nav-item"><i class="fas fa-user"></i><span>Profile</span></a>
+    </nav>
+
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="assets/js/firebase.js"></script>
+    <script>
+        const user = checkAuth();
+        if (!user) { window.location.href = 'login.html'; }
+
+        let currentUser = user;
+        let selectedBank = null;
+        let withdrawalAmount = 0;
+        let withdrawalFee = 0;
+        let withdrawalNet = 0;
+
+        window.addEventListener('load', async () => {
+            currentUser = await refreshUser();
+            
+            if (!hasActivePlan(currentUser)) {
+                document.getElementById('blockedSection').classList.remove('hidden');
+                document.getElementById('withdrawSection').classList.add('hidden');
+                return;
+            }
+
+            document.getElementById('withdrawBalance').textContent = fmt(currentUser.balance || 0);
+            loadBanks();
+        });
+
+        async function loadBanks() {
+            const snapshot = await db.collection('banks').where('userId', '==', currentUser.id).get();
+            let html = '';
+            if (snapshot.empty) {
+                html = '<p style="color:var(--text-dim);text-align:center;">No bank accounts saved. Add one in Profile.</p>';
+            } else {
+                snapshot.forEach(doc => {
+                    const bank = doc.data();
+                    html += `
+                    <div class="bank-select-item" onclick="selectBank('${doc.id}')" id="bank-${doc.id}">
+                        <div class="radio-circle"></div>
+                        <div>
+                            <strong>${bank.bankName}</strong><br>
+                            <small style="color:var(--text-dim);">${bank.acctNo} - ${bank.acctName}</small>
+                        </div>
+                    </div>`;
+                });
+            }
+            document.getElementById('bankList').innerHTML = html;
+        }
+
+        function selectBank(bankId) {
+            document.querySelectorAll('.bank-select-item').forEach(el => el.classList.remove('selected'));
+            document.getElementById('bank-' + bankId).classList.add('selected');
+            selectedBank = bankId;
+        }
+
+        function calculateFee() {
+            const amount = parseInt(document.getElementById('wAmt').value) || 0;
+            if (amount < MIN_WITHDRAWAL) {
+                document.getElementById('summaryCard').classList.add('hidden');
+                return;
+            }
+            withdrawalAmount = amount;
+            withdrawalFee = Math.floor(amount * WITHDRAWAL_FEE_PCT / 100);
+            withdrawalNet = amount - withdrawalFee;
+
+            document.getElementById('summaryCard').classList.remove('hidden');
+            document.getElementById('sumRequested').textContent = fmt(amount);
+            document.getElementById('sumFee').textContent = '- ' + fmt(withdrawalFee);
+            document.getElementById('sumNet').textContent = fmt(withdrawalNet);
+        }
+
+        async function requestWithdrawal() {
+            if (!withdrawalAmount || withdrawalAmount < MIN_WITHDRAWAL) {
+                return toast('Minimum withdrawal is ₦' + MIN_WITHDRAWAL.toLocaleString());
+            }
+            if (withdrawalAmount > (currentUser.balance || 0)) return toast('Insufficient balance');
+            if (!selectedBank) return toast('Please select a bank account');
+
+            const isOpen = await isWithdrawalWindowOpen();
+            if (!isOpen) return toast('Withdrawal window is currently closed');
+
+            const canWithdraw = await canWithdrawToday(currentUser.id);
+            if (!canWithdraw) return toast('You can only withdraw once per day');
+
+            if (!confirm(`Confirm withdrawal?\n\nAmount: ${fmt(withdrawalAmount)}\nFee: ${fmt(withdrawalFee)}\nYou'll receive: ${fmt(withdrawalNet)}`)) return;
+
+            try {
+                const bankDoc = await getDoc('banks', selectedBank);
+                if (!bankDoc) return toast('Bank account not found');
+
+                await updateDoc('users', currentUser.id, {
+                    balance: firebase.firestore.FieldValue.increment(-withdrawalAmount)
+                });
+
+                await db.collection('withdrawals').add({
+                    userId: currentUser.id, userName: currentUser.name,
+                    userEmail: currentUser.email, userPhone: currentUser.phone,
+                    amount: withdrawalAmount, fee: withdrawalFee, net: withdrawalNet,
+                    bankName: bankDoc.bankName, acctNo: bankDoc.acctNo, acctName: bankDoc.acctName,
+                    tasksCompleted: currentUser.tasksCompleted || 0,
+                    totalEarned: currentUser.totalEarned || 0,
+                    date: new Date().toISOString(), status: 'pending'
+                });
+
+                currentUser.balance = (currentUser.balance || 0) - withdrawalAmount;
+                localStorage.setItem('agv_u', JSON.stringify(currentUser));
+
+                document.getElementById('withdrawSection').classList.add('hidden');
+                document.getElementById('successSection').classList.remove('hidden');
+                document.getElementById('successAmount').textContent = fmt(withdrawalAmount);
+                document.getElementById('successFee').textContent = '- ' + fmt(withdrawalFee);
+                document.getElementById('successNet').textContent = fmt(withdrawalNet);
+
+                sendAdminEmail(
+                    '💸 NEW WITHDRAWAL - ' + currentUser.name,
+                    'NEW WITHDRAWAL REQUEST\n\n' +
+                    'User: ' + currentUser.name + ' (' + currentUser.id + ')\n' +
+                    'Email: ' + currentUser.email + '\nPhone: ' + currentUser.phone + '\n\n' +
+                    'Amount: ₦' + withdrawalAmount.toLocaleString() + '\n' +
+                    'Fee: ₦' + withdrawalFee.toLocaleString() + '\n' +
+                    'Net: ₦' + withdrawalNet.toLocaleString() + '\n\n' +
+                    'BANK: ' + bankDoc.bankName + '\n' +
+                    'Account: ' + bankDoc.acctNo + '\n' +
+                    'Name: ' + bankDoc.acctName + '\n\n' +
+                    'Tasks: ' + (currentUser.tasksCompleted || 0) + '\n' +
+                    'Earned: ₦' + (currentUser.totalEarned || 0).toLocaleString() + '\n\n' +
+                    'Action: Login to admin to approve/reject'
+                );
+
+                toast('✅ Withdrawal submitted! Processing: 0-72 hours.');
+
+            } catch (error) {
+                console.error('Withdrawal error:', error);
+                toast('Error processing withdrawal. Please try again.');
+            }
+        }
+    </script>
+</body>
+</html>
