@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - Agrimindvest</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="assets/css/style.css">
+    <style>
+        body { display: flex; min-height: 100vh; }
+
+        .admin-sidebar {
+            width: 250px; background: var(--primary-dark);
+            position: fixed; top: 0; left: 0; bottom: 0;
+            overflow-y: auto; z-index: 200;
+            border-right: 2px solid var(--accent);
+        }
+
+        .admin-sidebar .sidebar-header {
+            padding: 18px; border-bottom: 1px solid var(--border);
+            display: flex; align-items: center; gap: 8px;
+            font-size: 1.1em; font-weight: 700; color: var(--accent-light);
+            cursor: pointer; transition: all 0.3s;
+        }
+
+        .admin-sidebar .sidebar-header:hover { opacity: 0.8; }
+        .admin-sidebar .sidebar-header i { color: var(--accent); font-size: 1.3em; }
+        .admin-sidebar .sidebar-nav { padding: 12px; }
+
+        .admin-sidebar .nav-item {
+            display: flex; align-items: center; gap: 8px;
+            padding: 10px 12px; color: var(--text-dim);
+            border-radius: 8px; margin-bottom: 3px;
+            cursor: pointer; border: none; background: none;
+            width: 100%; text-align: left; font-size: 0.85em;
+            transition: all 0.3s;
+        }
+
+        .admin-sidebar .nav-item:hover,
+        .admin-sidebar .nav-item.active { background: var(--accent); color: white; }
+        .admin-sidebar .nav-item i { width: 18px; text-align: center; }
+
+        .admin-sidebar .nav-item.logout {
+            color: var(--danger); margin-top: 20px;
+            border-top: 1px solid var(--border); padding-top: 15px;
+        }
+
+        .admin-main { flex: 1; margin-left: 250px; padding: 25px; min-height: 100vh; }
+
+        .admin-section { display: none; animation: fadeIn 0.3s ease; }
+        .admin-section.active { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .admin-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 25px; padding-bottom: 15px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .admin-header h1 { color: var(--accent-light); font-size: 1.4em; }
+
+        .stats-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 12px; margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: var(--card); padding: 18px; border-radius: 12px;
+            border: 1px solid var(--border); display: flex; align-items: center; gap: 12px;
+            transition: all 0.3s;
+        }
+
+        .stat-card:hover { transform: translateY(-3px); border-color: var(--accent); }
+        .stat-card i { font-size: 1.8em; color: var(--accent); }
+        .stat-info h4 { color: var(--text-dim); font-size: 0.75em; }
+        .stat-info span { font-size: 1.3em; font-weight: 700; color: var(--gold); }
+
+        .table-wrap {
+            background: var(--card); border-radius: 12px; padding: 18px;
+            border: 1px solid var(--border); overflow-x: auto;
+        }
+
+        table { width: 100%; border-collapse: collapse; }
+        th { background: var(--primary-dark); padding: 10px; text-align: left; font-weight: 600; color: var(--gold); font-size: 0.8em; }
+        td { padding: 10px; border-bottom: 1px solid var(--border); font-size: 0.8em; }
+        tr:hover { background: rgba(76,175,80,0.05); }
+
+        .badge { padding: 3px 10px; border-radius: 12px; font-size: 0.7em; font-weight: 600; }
+        .badge-success { background: rgba(0,200,83,0.2); color: var(--success); }
+        .badge-warning { background: rgba(255,152,0,0.2); color: var(--warning); }
+        .badge-danger { background: rgba(244,67,54,0.2); color: var(--danger); }
+
+        .btn-sm { padding: 5px 10px; font-size: 0.75em; }
+
+        .login-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: var(--darker); display: flex;
+            justify-content: center; align-items: center; z-index: 9999;
+        }
+
+        .login-box {
+            background: var(--card); border-radius: 16px; padding: 35px;
+            max-width: 380px; width: 90%; border: 2px solid var(--accent);
+            text-align: center;
+        }
+
+        .login-box h2 { color: var(--accent-light); margin-bottom: 20px; }
+        .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px; }
+
+        @media (max-width: 768px) {
+            .admin-sidebar { width: 100%; position: relative; height: auto; }
+            .admin-main { margin-left: 0; }
+            body { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- LOGIN OVERLAY -->
+    <div class="login-overlay" id="loginOverlay">
+        <div class="login-box">
+            <i class="fas fa-shield-alt" style="font-size:3em;color:var(--accent);margin-bottom:12px;"></i>
+            <h2>Admin Login</h2>
+            <p style="color:var(--text-dim);margin-bottom:18px;font-size:0.9em;">Agrimindvest Control Panel</p>
+            <div class="form-group"><input type="text" class="form-input" id="adminUser" placeholder="Email"></div>
+            <div class="form-group"><input type="password" class="form-input" id="adminPass" placeholder="Password"></div>
+            <button class="btn btn-primary btn-block" onclick="adminLogin()">Login <i class="fas fa-arrow-right"></i></button>
+            <p style="margin-top:15px;font-size:0.75em;color:var(--text-dim);"><a href="index.html" style="color:var(--text-dim);">← Back to website</a></p>
+        </div>
+    </div>
+
+    <!-- SIDEBAR -->
+    <aside class="admin-sidebar" id="sidebar" style="display:none;">
+        <div class="sidebar-header" onclick="window.open('index.html','_blank')"><i class="fas fa-seedling"></i> AGV Admin</div>
+        <nav class="sidebar-nav">
+            <button class="nav-item active" data-section="dashboard"><i class="fas fa-chart-pie"></i> Dashboard</button>
+            <button class="nav-item" data-section="users"><i class="fas fa-users"></i> Users</button>
+            <button class="nav-item" data-section="deposits"><i class="fas fa-money-bill"></i> Deposits</button>
+            <button class="nav-item" data-section="withdrawals"><i class="fas fa-wallet"></i> Withdrawals</button>
+            <button class="nav-item" data-section="content"><i class="fas fa-tasks"></i> Content</button>
+            <button class="nav-item" data-section="referrals"><i class="fas fa-sitemap"></i> Referrals</button>
+            <button class="nav-item" data-section="plans"><i class="fas fa-tags"></i> Plans</button>
+            <button class="nav-item" data-section="notices"><i class="fas fa-bullhorn"></i> Notices</button>
+            <button class="nav-item" data-section="settings"><i class="fas fa-cog"></i> Settings</button>
+            <button class="nav-item logout" onclick="adminLogout()"><i class="fas fa-sign-out-alt"></i> Logout</button>
+        </nav>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="admin-main" id="mainContent" style="display:none;">
+        <div class="admin-header"><h1 id="sectionTitle">📊 Dashboard</h1><span style="color:var(--text-dim);"><i class="fas fa-user-shield"></i> Administrator</span></div>
+
+        <!-- DASHBOARD -->
+        <div class="admin-section active" id="sec-dashboard">
+            <div class="stats-grid">
+                <div class="stat-card"><i class="fas fa-users"></i><div class="stat-info"><h4>Total Users</h4><span id="sUsers">0</span></div></div>
+                <div class="stat-card"><i class="fas fa-user-check"></i><div class="stat-info"><h4>Active Plans</h4><span id="sActive">0</span></div></div>
+                <div class="stat-card"><i class="fas fa-money-bill-wave"></i><div class="stat-info"><h4>Total Invested</h4><span id="sInvested">₦0</span></div></div>
+                <div class="stat-card"><i class="fas fa-hand-holding-usd"></i><div class="stat-info"><h4>Total Paid Out</h4><span id="sPaid">₦0</span></div></div>
+                <div class="stat-card"><i class="fas fa-clock"></i><div class="stat-info"><h4>Pending Deposits</h4><span id="sPendingDep">0</span></div></div>
+                <div class="stat-card"><i class="fas fa-hourglass-half"></i><div class="stat-info"><h4>Pending W/D</h4><span id="sPendingWth">0</span></div></div>
+            </div>
+        </div>
+
+        <!-- USERS -->
+        <div class="admin-section" id="sec-users">
+            <div class="section-header"><h3>👥 Users</h3><input type="text" class="form-input" placeholder="Search..." id="userSearch" oninput="loadUsers()" style="width:200px;"></div>
+            <div class="table-wrap"><table><thead><tr><th>ID</th><th>Name</th><th>Email</th><th>Phone</th><th>Plan</th><th>Balance</th><th>Status</th><th>Actions</th></tr></thead><tbody id="usersTable"></tbody></table></div>
+        </div>
+
+        <!-- DEPOSITS -->
+        <div class="admin-section" id="sec-deposits">
+            <div class="section-header"><h3>💳 Deposits</h3><button class="btn btn-primary btn-sm" onclick="loadDeposits()"><i class="fas fa-sync"></i> Refresh</button></div>
+            <div class="table-wrap"><table><thead><tr><th>User</th><th>Amount</th><th>Ref</th><th>Payer Name</th><th>Payer Acct</th><th>Date</th><th>Status</th><th>Actions</th></tr></thead><tbody id="depositsTable"></tbody></table></div>
+        </div>
+
+        <!-- WITHDRAWALS -->
+        <div class="admin-section" id="sec-withdrawals">
+            <div class="section-header"><h3>💸 Withdrawals</h3><button class="btn btn-primary btn-sm" onclick="loadWithdrawals()"><i class="fas fa-sync"></i> Refresh</button></div>
+            <div class="table-wrap"><table><thead><tr><th>User</th><th>Amount</th><th>Fee</th><th>Net</th><th>Bank</th><th>Date</th><th>Status</th><th>Actions</th></tr></thead><tbody id="withdrawalsTable"></tbody></table></div>
+        </div>
+
+        <!-- CONTENT -->
+        <div class="admin-section" id="sec-content">
+            <div class="section-header"><h3>📝 Content Bank</h3><button class="btn btn-primary btn-sm" onclick="showAddArticle()"><i class="fas fa-plus"></i> Add Article</button></div>
+            <div class="card" id="addArticleForm" style="display:none;">
+                <h4>➕ Add New Article</h4>
+                <div class="form-group"><label>Title</label><input type="text" class="form-input" id="aTitle"></div>
+                <div class="form-group"><label>Content</label><textarea class="form-textarea" id="aContent"></textarea></div>
+                <p style="color:var(--text-dim);font-size:0.8em;margin-bottom:10px;">5 Questions (A, B, C options)</p>
+                <div id="questionsContainer"></div>
+                <button class="btn btn-success btn-sm" onclick="saveArticle()">💾 Save</button>
+                <button class="btn btn-warning btn-sm" onclick="document.getElementById('addArticleForm').style.display='none'">Cancel</button>
+            </div>
+            <div id="articlesAdminList"></div>
+        </div>
+
+        <!-- REFERRALS -->
+        <div class="admin-section" id="sec-referrals">
+            <div class="section-header"><h3>👥 Referrals</h3></div>
+            <div class="table-wrap"><table><thead><tr><th>Referrer</th><th>Referee</th><th>Package</th><th>Earned</th><th>Date</th></tr></thead><tbody id="refTable"></tbody></table></div>
+        </div>
+
+        <!-- PLANS -->
+        <div class="admin-section" id="sec-plans">
+            <div class="section-header"><h3>📋 Plans</h3><button class="btn btn-primary btn-sm" onclick="showAddPlan()"><i class="fas fa-plus"></i> Add Plan</button></div>
+            <div id="plansAdminList"></div>
+        </div>
+
+        <!-- NOTICES -->
+        <div class="admin-section" id="sec-notices">
+            <h3>📢 Notices & Broadcast</h3>
+            <div class="card">
+                <div class="form-group"><label>Broadcast Message</label><textarea class="form-textarea" id="broadMsg"></textarea></div>
+                <div class="form-group"><label>Duration (hours)</label><input type="number" class="form-input" id="broadDuration" value="24"></div>
+                <button class="btn btn-primary btn-sm" onclick="sendBroadcast()">📢 Send</button>
+            </div>
+            <div class="card" style="margin-top:15px;">
+                <h4>📝 Info Notices</h4>
+                <div class="form-group"><label>Deposit Notice</label><textarea class="form-textarea" id="noticeDeposit"></textarea></div>
+                <div class="form-group"><label>Withdrawal Notice</label><textarea class="form-textarea" id="noticeWithdrawal"></textarea></div>
+                <div class="form-group"><label>Home Page Message</label><textarea class="form-textarea" id="noticeHome"></textarea></div>
+                <div class="form-group"><label>Task Instructions</label><textarea class="form-textarea" id="noticeTasks"></textarea></div>
+                <button class="btn btn-success btn-sm" onclick="saveNotices()">💾 Save Notices</button>
+            </div>
+        </div>
+
+        <!-- SETTINGS -->
+        <div class="admin-section" id="sec-settings">
+            <h3>⚙️ Settings</h3>
+            <div class="card">
+                <div class="form-group"><label>Telegram Group Link</label><input type="text" class="form-input" id="setTelegram"></div>
+                <div class="form-group"><label>Support Email</label><input type="email" class="form-input" id="setSupportEmail"></div>
+                <div class="form-group"><label>Welcome Bonus (₦)</label><input type="number" class="form-input" id="setBonus"></div>
+                <div class="form-group"><label>Cycle Days</label><input type="number" class="form-input" id="setCycle"></div>
+                <div class="form-group"><label>Referral L1 (%)</label><input type="number" class="form-input" id="setRef1"></div>
+                <div class="form-group"><label>Referral L2 (%)</label><input type="number" class="form-input" id="setRef2"></div>
+                <div class="form-group"><label>Referral L3 (%)</label><input type="number" class="form-input" id="setRef3"></div>
+                <button class="btn btn-success btn-sm" onclick="saveSettings()">💾 Save Settings</button>
+            </div>
+        </div>
+    </main>
+
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="assets/js/firebase.js"></script>
+    <script src="assets/js/admin.js"></script>
+</body>
+  </html>
