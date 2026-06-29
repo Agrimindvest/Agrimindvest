@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agrimindvest (AGV) - Learn. Earn. Grow.</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="assets/css/style.css">
+    <style>
+        body {
+            background: var(--darker);
+            overflow-x: hidden;
+        }
+
+        .hero-cta {
+            margin-top: 25px;
+        }
+
+        .hero-cta .btn {
+            font-size: 1.1em;
+            padding: 16px 35px;
+            animation: btnPulse 2s infinite;
+        }
+
+        .login-link {
+            color: var(--accent-light);
+            cursor: pointer;
+            text-decoration: underline;
+            font-weight: 500;
+            transition: all 0.3s;
+            font-size: 0.9em;
+            margin-top: 15px;
+            display: inline-block;
+        }
+
+        .login-link:hover {
+            color: var(--accent);
+            transform: translateY(-2px);
+        }
+
+        .feature-list p i {
+            width: 25px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="hero">
+        <div class="hero-content">
+            <!-- Floating Logo -->
+            <div class="hero-logo">🌱</div>
+
+            <!-- Title -->
+            <h1 class="hero-title">AGRIMINDVEST</h1>
+            <p class="hero-tagline">Learn. Earn. Grow.</p>
+
+            <!-- Typewriter Effect -->
+            <div class="typewriter-box">
+                <span class="typewriter-text" id="typewriter"></span>
+                <span class="cursor">|</span>
+            </div>
+
+            <!-- Feature List -->
+            <div class="feature-list">
+                <p><i class="fas fa-coins"></i> <strong>Earn daily</strong> by answering simple agricultural questions</p>
+                <p><i class="fas fa-book-open"></i> <strong>Learn modern</strong> farming techniques from expert articles</p>
+                <p><i class="fas fa-users"></i> <strong>Build your team</strong> with your referral link and earn 10% bonuses</p>
+                <p><i class="fas fa-wallet"></i> <strong>Withdraw earnings</strong> directly to your local bank account</p>
+                <p><i class="fas fa-gift"></i> <strong>Get ₦300</strong> welcome bonus on signup</p>
+            </div>
+
+            <!-- CTA Button -->
+            <div class="hero-cta">
+                <a href="register.html" class="btn btn-primary btn-lg btn-block">✨ CREATE FREE ACCOUNT</a>
+            </div>
+
+            <!-- Login Link -->
+            <a href="login.html" class="login-link">Already a member? Login →</a>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="assets/js/firebase.js"></script>
+    <script>
+        // ============ TYPEWRITER EFFECT ============
+        const phrases = [
+            "Read about agriculture...",
+            "Learn modern farming techniques...",
+            "Answer simple questions...",
+            "Earn daily payouts...",
+            "Build your team...",
+            "Grow your income..."
+        ];
+
+        let phraseIndex = 0;
+        let charIndex = 0;
+        let isDeleting = false;
+        let typewriterElement = document.getElementById('typewriter');
+
+        function typeWriter() {
+            const currentPhrase = phrases[phraseIndex];
+
+            if (isDeleting) {
+                typewriterElement.textContent = currentPhrase.substring(0, charIndex - 1);
+                charIndex--;
+            } else {
+                typewriterElement.textContent = currentPhrase.substring(0, charIndex + 1);
+                charIndex++;
+            }
+
+            let typeSpeed = isDeleting ? 40 : 80;
+
+            if (!isDeleting && charIndex === currentPhrase.length) {
+                typeSpeed = 2000; // Pause at end
+                isDeleting = true;
+            } else if (isDeleting && charIndex === 0) {
+                isDeleting = false;
+                phraseIndex = (phraseIndex + 1) % phrases.length;
+                typeSpeed = 500; // Pause before next phrase
+            }
+
+            setTimeout(typeWriter, typeSpeed);
+        }
+
+        // Start typewriter on page load
+        window.addEventListener('load', () => {
+            setTimeout(typeWriter, 500);
+        });
+
+        // Check if user is already logged in
+        const savedUser = localStorage.getItem('agv_u');
+        if (savedUser) {
+            try {
+                const user = JSON.parse(savedUser);
+                if (user && user.id) {
+                    const loginLink = document.querySelector('.login-link');
+                    if (loginLink) {
+                        loginLink.textContent = 'Continue to Dashboard →';
+                        loginLink.href = 'home.html';
+                    }
+                }
+            } catch (e) {
+                // Invalid data, ignore
+            }
+        }
+    </script>
+</body>
+</html>
