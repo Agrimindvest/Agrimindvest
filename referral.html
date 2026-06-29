@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>My Team - Agrimindvest</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="assets/css/style.css">
+    <style>
+        .referral-container { max-width: 600px; margin: 0 auto; }
+
+        .rules-card {
+            background: rgba(255,152,0,0.1);
+            border: 1px solid var(--warning);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 15px;
+            animation: fadeSlideIn 0.5s ease;
+        }
+
+        .rules-card h4 { color: var(--warning); margin-bottom: 8px; font-size: 0.9em; }
+        .rules-card ul { list-style: none; padding: 0; }
+        .rules-card li { padding: 4px 0; font-size: 0.8em; color: var(--text-dim); }
+        .rules-card li i { color: var(--accent); margin-right: 6px; }
+
+        .referral-link-card {
+            background: var(--dark);
+            border: 2px dashed var(--accent);
+            border-radius: 16px;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 15px;
+            transition: all 0.3s;
+        }
+
+        .referral-link-card:hover { border-color: var(--gold); }
+
+        .ref-link-text {
+            font-size: 0.95em;
+            font-weight: 700;
+            color: var(--gold);
+            word-break: break-all;
+            margin: 10px 0;
+        }
+
+        .share-buttons { display: flex; gap: 8px; margin-top: 12px; }
+
+        .earnings-card { text-align: center; margin-bottom: 15px; }
+        .earnings-amount { font-size: 2.5em; font-weight: 800; color: var(--gold); }
+
+        .ref-user-card {
+            background: var(--card);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 8px;
+            border: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s;
+            animation: fadeSlideIn 0.3s ease forwards;
+            opacity: 0;
+        }
+
+        @keyframes fadeSlideIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .ref-user-card:hover { border-color: var(--accent); transform: translateX(3px); }
+
+        .ref-user-status {
+            font-size: 0.7em;
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-weight: 600;
+        }
+
+        .ref-status-active { background: rgba(0,200,83,0.2); color: var(--success); }
+        .ref-status-inactive { background: rgba(158,158,158,0.2); color: #9e9e9e; }
+
+        .empty-state { text-align: center; padding: 40px 20px; color: var(--text-dim); }
+        .empty-state i { font-size: 3em; color: var(--border); margin-bottom: 15px; }
+    </style>
+</head>
+<body>
+
+    <header class="header">
+        <a href="home.html" class="logo"><i class="fas fa-seedling"></i> Agrimindvest</a>
+        <div class="icons">
+            <a href="profile.html"><i class="fas fa-user-circle"></i></a>
+        </div>
+    </header>
+
+    <div class="main-content">
+        
+        <a href="home.html" style="color:var(--accent-light);text-decoration:none;display:flex;align-items:center;gap:5px;margin-bottom:15px;">
+            <i class="fas fa-arrow-left"></i> Back to Home
+        </a>
+
+        <div class="referral-container">
+            <h3 style="color:var(--accent-light);margin-bottom:15px;">👥 My Team</h3>
+
+            <div class="rules-card">
+                <h4>⚠️ REFERRAL RULES</h4>
+                <ul>
+                    <li><i class="fas fa-check-circle"></i> You MUST have an active plan to earn referral bonuses</li>
+                    <li><i class="fas fa-check-circle"></i> Your referrals must also buy a plan for you to earn</li>
+                    <li><i class="fas fa-check-circle"></i> Bonus: 10% of their FIRST investment only</li>
+                    <li><i class="fas fa-check-circle"></i> One-time bonus per referral</li>
+                </ul>
+            </div>
+
+            <div class="referral-link-card">
+                <p style="color:var(--text-dim);font-size:0.85em;">🔗 YOUR REFERRAL LINK</p>
+                <div class="ref-link-text" id="refLink">Loading...</div>
+                <div class="share-buttons">
+                    <button class="btn btn-primary btn-sm" onclick="copyRefLink()" style="flex:1;"><i class="fas fa-copy"></i> Copy Link</button>
+                    <button class="btn btn-sm" onclick="shareWhatsApp()" style="flex:1;background:#25D366;color:white;"><i class="fab fa-whatsapp"></i> WhatsApp</button>
+                </div>
+            </div>
+
+            <div class="card earnings-card">
+                <div style="color:var(--text-dim);font-size:0.85em;">💰 REFERRAL EARNINGS</div>
+                <div class="earnings-amount" id="refEarnings">₦0</div>
+            </div>
+
+            <div class="stats-row">
+                <div class="stat-mini"><div class="val" id="refTotal">0</div><div class="lbl">Total Referred</div></div>
+                <div class="stat-mini"><div class="val" id="refActive">0</div><div class="lbl">Active (Has Plan)</div></div>
+                <div class="stat-mini"><div class="val" id="refInactive">0</div><div class="lbl">Inactive (No Plan)</div></div>
+            </div>
+
+            <h4 style="color:var(--text-dim);margin-bottom:8px;">👤 REFERRED USERS</h4>
+            <div id="refUsersList">
+                <div class="empty-state"><div class="spinner"></div><p>Loading...</p></div>
+            </div>
+        </div>
+    </div>
+
+    <nav class="bottom-nav">
+        <a href="home.html" class="nav-item"><i class="fas fa-home"></i><span>Home</span></a>
+        <a href="plans.html" class="nav-item"><i class="fas fa-layer-group"></i><span>Plans</span></a>
+        <a href="deposit.html" class="nav-item"><i class="fas fa-credit-card"></i><span>Deposit</span></a>
+        <a href="tasks.html" class="nav-item"><i class="fas fa-tasks"></i><span>Tasks</span></a>
+        <a href="profile.html" class="nav-item"><i class="fas fa-user"></i><span>Profile</span></a>
+    </nav>
+
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="assets/js/firebase.js"></script>
+    <script>
+        const user = checkAuth();
+        if (!user) window.location.href = 'login.html';
+
+        let currentUser = user;
+
+        window.addEventListener('load', async () => {
+            currentUser = await refreshUser();
+            loadReferralData();
+        });
+
+        async function loadReferralData() {
+            const refCode = currentUser.refCode || currentUser.id;
+            const refLink = 'agrimindvest.web.app/ref/' + refCode;
+            document.getElementById('refLink').textContent = refLink;
+            document.getElementById('refEarnings').textContent = fmt(currentUser.refEarnings || 0);
+
+            const snapshot = await db.collection('users').where('referredBy', '==', currentUser.id).get();
+
+            let totalRefs = snapshot.size;
+            let activeRefs = 0;
+            let inactiveRefs = 0;
+            let usersHTML = '';
+
+            if (snapshot.empty) {
+                usersHTML = '<div class="empty-state"><i class="fas fa-users"></i><p>No referrals yet.</p><p style="font-size:0.85em;">Share your referral link to start building your team!</p></div>';
+            } else {
+                const refEarnings = await db.collection('referrals').where('referrerId', '==', currentUser.id).get();
+                const earningsMap = {};
+                refEarnings.forEach(d => { const data = d.data(); earningsMap[data.refereeId] = (earningsMap[data.refereeId] || 0) + (data.earned || 0); });
+
+                snapshot.forEach((doc, i) => {
+                    const refUser = doc.data();
+                    const hasPlan = refUser.plan && refUser.plan !== 'none' && refUser.invested;
+                    const earned = earningsMap[refUser.id] || 0;
+                    if (hasPlan) activeRefs++; else inactiveRefs++;
+
+                    usersHTML += `
+                    <div class="ref-user-card" style="animation-delay:${i * 0.05}s;">
+                        <div>
+                            <strong>${hasPlan ? '🟢' : '⚪'} ${refUser.name}</strong>
+                            <br><small style="color:var(--text-dim);">${hasPlan ? 'Plan: ' + refUser.plan : 'No Plan'} • Joined: ${new Date(refUser.createdAt).toLocaleDateString()}</small>
+                        </div>
+                        <div style="text-align:right;">
+                            <span style="color:var(--gold);font-weight:600;">${earned > 0 ? '+ ' + fmt(earned) : '₦0'}</span>
+                            <br><span class="ref-user-status ${hasPlan ? 'ref-status-active' : 'ref-status-inactive'}">${hasPlan ? 'Active' : 'Inactive'}</span>
+                        </div>
+                    </div>`;
+                });
+            }
+
+            document.getElementById('refTotal').textContent = totalRefs;
+            document.getElementById('refActive').textContent = activeRefs;
+            document.getElementById('refInactive').textContent = inactiveRefs;
+            document.getElementById('refUsersList').innerHTML = usersHTML;
+        }
+
+        function copyRefLink() {
+            const refCode = currentUser.refCode || currentUser.id;
+            const refLink = 'agrimindvest.web.app/ref/' + refCode;
+            navigator.clipboard.writeText(refLink).then(() => toast('📋 Referral link copied!')).catch(() => toast('Copy manually: ' + refLink));
+        }
+
+        function shareWhatsApp() {
+            const refCode = currentUser.refCode || currentUser.id;
+            const refLink = 'agrimindvest.web.app/ref/' + refCode;
+            const message = encodeURIComponent('🌱 Join me on Agrimindvest!\n\nRead articles, answer questions, and earn daily.\n\nUse my referral link:\n' + refLink + '\n\nGet ₦300 welcome bonus!');
+            window.open('https://wa.me/?text=' + message, '_blank');
+        }
+    </script>
+</body>
+</html>
