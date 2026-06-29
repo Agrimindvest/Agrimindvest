@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Read - Agrimindvest</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="assets/css/style.css">
+    <style>
+        .read-container { max-width: 600px; margin: 0 auto; }
+
+        .filter-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 15px; }
+
+        .article-preview-card {
+            background: var(--card);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 12px;
+            border: 1px solid var(--border);
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            animation: fadeSlideIn 0.4s ease forwards;
+            opacity: 0;
+        }
+
+        @keyframes fadeSlideIn {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .article-preview-card:hover {
+            border-color: var(--accent);
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        .article-preview-card .category-badge {
+            display: inline-block;
+            font-size: 0.7em;
+            padding: 3px 10px;
+            border-radius: 10px;
+            background: rgba(76,175,80,0.15);
+            color: var(--accent-light);
+            margin-bottom: 8px;
+        }
+
+        .article-preview-card h4 { color: var(--accent-light); margin-bottom: 6px; font-size: 1em; }
+        .article-preview-card p { color: var(--text-dim); font-size: 0.82em; line-height: 1.5; }
+
+        .read-more { color: var(--accent); font-size: 0.8em; font-weight: 600; margin-top: 8px; display: inline-block; }
+
+        .article-modal {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: var(--darker);
+            z-index: 1000;
+            overflow-y: auto;
+            padding: 20px;
+            animation: modalSlideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes modalSlideIn {
+            from { opacity: 0; transform: translateY(40px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .article-modal .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .article-modal .modal-body {
+            max-width: 700px;
+            margin: 0 auto;
+            line-height: 2;
+            font-size: 0.95em;
+        }
+
+        .article-modal .modal-body h2 { color: var(--accent-light); margin-bottom: 15px; }
+        .article-modal .modal-body p { color: var(--text-dim); margin-bottom: 15px; }
+
+        .close-btn {
+            background: none; border: none;
+            color: var(--text-dim); font-size: 1.5em;
+            cursor: pointer; transition: all 0.3s;
+        }
+
+        .close-btn:hover { color: var(--accent); transform: rotate(90deg); }
+
+        .empty-state { text-align: center; padding: 40px 20px; color: var(--text-dim); }
+        .empty-state i { font-size: 3em; color: var(--border); margin-bottom: 15px; }
+    </style>
+</head>
+<body>
+
+    <header class="header">
+        <a href="home.html" class="logo"><i class="fas fa-seedling"></i> Agrimindvest</a>
+        <div class="icons">
+            <a href="profile.html"><i class="fas fa-user-circle"></i></a>
+        </div>
+    </header>
+
+    <div class="main-content">
+        
+        <a href="home.html" style="color:var(--accent-light);text-decoration:none;display:flex;align-items:center;gap:5px;margin-bottom:15px;">
+            <i class="fas fa-arrow-left"></i> Back to Home
+        </a>
+
+        <div class="read-container">
+            <h3 style="color:var(--accent-light);margin-bottom:15px;">📖 Agricultural Insights</h3>
+
+            <div class="filter-tabs">
+                <button class="filter-tab active" onclick="filterArticles('all')">All</button>
+                <button class="filter-tab" onclick="filterArticles('Crop Farming')">🌾 Farming</button>
+                <button class="filter-tab" onclick="filterArticles('Livestock')">🐄 Livestock</button>
+                <button class="filter-tab" onclick="filterArticles('Market')">📊 Market</button>
+                <button class="filter-tab" onclick="filterArticles('Tips')">💡 Tips</button>
+                <button class="filter-tab" onclick="filterArticles('Tech')">🚜 Tech</button>
+                <button class="filter-tab" onclick="filterArticles('Finance')">💰 Finance</button>
+            </div>
+
+            <div id="articlesList">
+                <div class="empty-state"><div class="spinner"></div><p>Loading articles...</p></div>
+            </div>
+        </div>
+    </div>
+
+    <nav class="bottom-nav">
+        <a href="home.html" class="nav-item"><i class="fas fa-home"></i><span>Home</span></a>
+        <a href="plans.html" class="nav-item"><i class="fas fa-layer-group"></i><span>Plans</span></a>
+        <a href="deposit.html" class="nav-item"><i class="fas fa-credit-card"></i><span>Deposit</span></a>
+        <a href="tasks.html" class="nav-item"><i class="fas fa-tasks"></i><span>Tasks</span></a>
+        <a href="profile.html" class="nav-item"><i class="fas fa-user"></i><span>Profile</span></a>
+    </nav>
+
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="assets/js/firebase.js"></script>
+    <script>
+        const user = checkAuth();
+        if (!user) window.location.href = 'login.html';
+
+        const readArticles = [
+            {
+                title: 'Natural Pest Control for Maize Farming',
+                content: 'Maize is one of the most important cereal crops in Nigeria, providing food for millions of households across the country. However, farmers face significant challenges from various pests that can destroy up to 50% of their harvest if not properly managed.\n\nNatural pest control methods have been used by Nigerian farmers for generations and remain effective today. These methods are not only cost-effective but also environmentally friendly, preserving beneficial insects and soil health.\n\nNeem leaf application is one of the most effective natural pest control methods. The neem tree is commonly found across Nigeria, and its leaves contain azadirachtin, a compound that repels over 200 species of insects. To prepare neem spray, farmers boil fresh neem leaves in water for 20 minutes, allow the solution to cool, strain it, and spray directly on affected crops.\n\nAsh dusting is another time-tested method. Wood ash from cooking fires is collected and dusted onto plant leaves early in the morning when dew is present. The ash creates a thin protective barrier that irritates insects and prevents them from feeding on the crops.\n\nCompanion planting involves growing certain plants together for mutual benefit. Desmodium grass, when planted alongside maize, repels stem borers while attracting beneficial insects that prey on pests.',
+                category: 'Crop Farming'
+            },
+            {
+                title: 'Tomato Farming: From Seed to Market',
+                content: 'Tomato farming is one of the most profitable agricultural ventures in Nigeria, with year-round demand from households, restaurants, and food processing companies. However, success requires understanding the complete production cycle and market dynamics.\n\nThe first step is selecting the right variety for your region and purpose. Roma VF and UC82B are popular determinate varieties suitable for processing into paste and puree. Indeterminate varieties like Beefsteak and Cherry tomatoes continue producing fruits over a longer period and are ideal for fresh market sales.\n\nSeedlings should be started in nursery beds or trays about 4-6 weeks before transplanting. The nursery should be protected from direct sunlight and heavy rain. Seeds germinate in 5-10 days, and seedlings are ready for transplanting when they have 4-6 true leaves.\n\nField preparation involves deep plowing and incorporation of organic matter like compost or well-rotted manure. Tomatoes prefer well-drained loamy soil with a pH between 6.0 and 6.8.\n\nMarket timing is crucial for profitability. In Nigeria, tomato prices peak during the dry season (November to March) when supply is limited, often reaching ₦50,000 per large basket.',
+                category: 'Crop Farming'
+            },
+            {
+                title: 'Poultry Farming for Beginners',
+                content: 'Poultry farming is one of the most accessible entry points into livestock agriculture in Nigeria, with relatively low startup costs and quick returns. Whether focusing on broilers for meat or layers for eggs, success depends on proper planning and management.\n\nBroiler production is attractive because of the short production cycle. Day-old chicks reach market weight of 2-2.5kg in just 6-8 weeks. With proper management, a farmer can complete 5-6 production cycles per year.\n\nHousing is critical for bird health and productivity. The poultry house should provide adequate space, good ventilation, and protection from predators. The floor should be concrete for easy cleaning and disinfection. Proper lighting (16 hours daily for layers) stimulates egg production.\n\nFeeding accounts for 70% of production costs, making feed management the key to profitability. Broilers need starter feed (22-24% protein) for the first 4 weeks, then finisher feed (18-20% protein) until market.\n\nDisease prevention through vaccination is non-negotiable. Essential vaccines include Newcastle disease, Gumboro, and Fowl Pox.',
+                category: 'Livestock'
+            },
+            {
+                title: 'Agricultural Finance and Budgeting',
+                content: 'Proper financial management is essential for successful farming. Farmers need to budget for seeds, fertilizers, labor, and equipment before each planting season. Keeping records of expenses and income helps identify profitable crops and areas to reduce costs.\n\nMany farmers can access agricultural loans through cooperative societies or government programs like the Anchor Borrowers Programme. Setting aside 20% of profits for reinvestment ensures farm growth year after year.\n\nA farm budget carefully plans all income and expenses for the coming season. List all expected costs including seeds, fertilizer, labor, and transport. Estimate realistic income based on current market prices and expected yields.\n\nSmart saving habits ensure financial stability throughout the year. Farmers earn most of their income during harvest but need money year-round.',
+                category: 'Finance'
+            },
+            {
+                title: 'Fish Farming Opportunities',
+                content: 'Nigeria is the largest aquaculture producer in Africa, with annual production exceeding 300,000 metric tons. Fish farming offers attractive returns with production cycles as short as 5-6 months.\n\nCatfish dominates Nigerian aquaculture, accounting for over 80% of farmed fish. Its popularity stems from fast growth rate, ability to breathe atmospheric oxygen, and strong market demand.\n\nWater quality is the most critical factor in fish farming success. Dissolved oxygen should be maintained above 5mg/L through aeration or water exchange. pH should range from 6.5 to 8.5.\n\nMarketing catfish is relatively easy due to consistent demand. Prices range from ₦800-1,200 per kg at farm gate, with higher prices during festive seasons.',
+                category: 'Livestock'
+            }
+        ];
+
+        let currentFilter = 'all';
+
+        window.addEventListener('load', () => { renderArticles(); });
+
+        function renderArticles() {
+            const filtered = currentFilter === 'all' ? readArticles : readArticles.filter(a => a.category === currentFilter);
+
+            if (filtered.length === 0) {
+                document.getElementById('articlesList').innerHTML = '<div class="empty-state"><i class="fas fa-book-open"></i><p>No articles in this category yet.</p></div>';
+                return;
+            }
+
+            let html = '';
+            filtered.forEach((article, i) => {
+                html += `
+                <div class="article-preview-card" onclick="openArticle(${readArticles.indexOf(article)})" style="animation-delay:${i * 0.06}s;">
+                    <span class="category-badge">${article.category}</span>
+                    <h4>📖 ${article.title}</h4>
+                    <p>${article.content.substring(0, 150)}...</p>
+                    <span class="read-more">Read Full Article →</span>
+                </div>`;
+            });
+
+            document.getElementById('articlesList').innerHTML = html;
+        }
+
+        function filterArticles(category) {
+            currentFilter = category;
+            document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            renderArticles();
+        }
+
+        function openArticle(index) {
+            const article = readArticles[index];
+            if (!article) return;
+
+            const modal = document.createElement('div');
+            modal.className = 'article-modal';
+            modal.innerHTML = `
+                <div class="modal-header">
+                    <span class="category-badge">${article.category}</span>
+                    <button class="close-btn" onclick="this.parentElement.parentElement.remove()"><i class="fas fa-times"></i></button>
+                </div>
+                <div class="modal-body">
+                    <h2>📖 ${article.title}</h2>
+                    <p style="white-space:pre-line;">${article.content}</p>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            modal.addEventListener('click', function(e) { if (e.target === modal) modal.remove(); });
+        }
+    </script>
+</body>
+</html>
