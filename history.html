@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>History - Agrimindvest</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="assets/css/style.css">
+    <style>
+        .history-container { max-width: 600px; margin: 0 auto; }
+
+        .filter-tabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-bottom: 15px;
+        }
+
+        .history-card {
+            background: var(--card);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-left: 4px solid var(--border);
+            transition: all 0.3s;
+            animation: fadeSlideIn 0.3s ease forwards;
+            opacity: 0;
+        }
+
+        @keyframes fadeSlideIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .history-card.deposit { border-left-color: var(--success); }
+        .history-card.withdrawal { border-left-color: var(--danger); }
+        .history-card.task { border-left-color: var(--gold); }
+        .history-card.referral { border-left-color: var(--info); }
+        .history-card.bonus { border-left-color: var(--accent); }
+        .history-card.plan { border-left-color: var(--warning); }
+
+        .history-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .history-type { font-weight: 700; font-size: 0.9em; }
+        .history-amount { font-weight: 800; font-size: 1.1em; }
+        .history-amount.positive { color: var(--success); }
+        .history-amount.negative { color: var(--danger); }
+
+        .history-detail { color: var(--text-dim); font-size: 0.78em; line-height: 1.5; }
+        .history-date { color: var(--text-dim); font-size: 0.7em; margin-top: 5px; }
+
+        .empty-state { text-align: center; padding: 40px 20px; color: var(--text-dim); }
+        .empty-state i { font-size: 3em; color: var(--border); margin-bottom: 15px; }
+    </style>
+</head>
+<body>
+
+    <header class="header">
+        <a href="home.html" class="logo"><i class="fas fa-seedling"></i> Agrimindvest</a>
+        <div class="icons">
+            <a href="profile.html"><i class="fas fa-user-circle"></i></a>
+        </div>
+    </header>
+
+    <div class="main-content">
+        
+        <a href="home.html" style="color:var(--accent-light);text-decoration:none;display:flex;align-items:center;gap:5px;margin-bottom:15px;">
+            <i class="fas fa-arrow-left"></i> Back to Home
+        </a>
+
+        <div class="history-container">
+            <h3 style="color:var(--accent-light);margin-bottom:15px;">📜 Transaction History</h3>
+
+            <div class="filter-tabs">
+                <button class="filter-tab active" onclick="filterHistory('all')">All</button>
+                <button class="filter-tab" onclick="filterHistory('deposit')">💳 Deposits</button>
+                <button class="filter-tab" onclick="filterHistory('withdrawal')">💸 Withdrawals</button>
+                <button class="filter-tab" onclick="filterHistory('task')">📝 Tasks</button>
+                <button class="filter-tab" onclick="filterHistory('referral')">👥 Referrals</button>
+                <button class="filter-tab" onclick="filterHistory('bonus')">🎁 Bonuses</button>
+                <button class="filter-tab" onclick="filterHistory('plan')">💰 Plans</button>
+            </div>
+
+            <div id="historyList">
+                <div class="empty-state">
+                    <div class="spinner"></div>
+                    <p>Loading transactions...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <nav class="bottom-nav">
+        <a href="home.html" class="nav-item"><i class="fas fa-home"></i><span>Home</span></a>
+        <a href="plans.html" class="nav-item"><i class="fas fa-layer-group"></i><span>Plans</span></a>
+        <a href="deposit.html" class="nav-item"><i class="fas fa-credit-card"></i><span>Deposit</span></a>
+        <a href="tasks.html" class="nav-item"><i class="fas fa-tasks"></i><span>Tasks</span></a>
+        <a href="profile.html" class="nav-item"><i class="fas fa-user"></i><span>Profile</span></a>
+    </nav>
+
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="assets/js/firebase.js"></script>
+    <script>
+        const user = checkAuth();
+        if (!user) window.location.href = 'login.html';
+
+        let currentUser = user;
+        let allTransactions = [];
+        let currentFilter = 'all';
+
+        window.addEventListener('load', async () => {
+            currentUser = await refreshUser();
+            loadAllHistory();
+        });
+
+        async function loadAllHistory() {
+            document.getElementById('historyList').innerHTML = '<div class="empty-state"><div class="spinner"></div><p>Loading...</p></div>';
+            allTransactions = [];
+
+            try {
+                const depSnap = await db.collection('deposits').where('userId', '==', currentUser.id).orderBy('date', 'desc').get();
+                depSnap.forEach(d => {
+                    const data = d.data();
+                    allTransactions.push({ type: 'deposit', amount: data.amount, status: data.status, date: data.date, ref: data.ref || '', payerName: data.payerName || '', payerAccount: data.payerAccount || '', channel: data.channel || 'manual' });
+                });
+
+                const wthSnap = await db.collection('withdrawals').where('userId', '==', currentUser.id).orderBy('date', 'desc').get();
+                wthSnap.forEach(d => {
+                    const data = d.data();
+                    allTransactions.push({ type: 'withdrawal', amount: data.amount, fee: data.fee, net: data.net, status: data.status, date: data.date, bankName: data.bankName || '', acctNo: data.acctNo || '' });
+                });
+
+                const paySnap = await db.collection('payments').where('userId', '==', currentUser.id).orderBy('date', 'desc').get();
+                paySnap.forEach(d => {
+                    const data = d.data();
+                    allTransactions.push({ type: 'plan', amount: data.amount, status: data.status, date: data.date, package: data.package || '' });
+                });
+
+                const refSnap = await db.collection('referrals').where('referrerId', '==', currentUser.id).where('earned', '>', 0).orderBy('earned').orderBy('date', 'desc').get();
+                refSnap.forEach(d => {
+                    const data = d.data();
+                    allTransactions.push({ type: 'referral', amount: data.earned, status: 'credited', date: data.date, refereeName: data.refereeName || '' });
+                });
+
+                const bonusSnap = await db.collection('deposits').where('userId', '==', currentUser.id).where('channel', '==', 'bonus').get();
+                bonusSnap.forEach(d => {
+                    const data = d.data();
+                    allTransactions.push({ type: 'bonus', amount: data.amount, status: 'credited', date: data.date, note: data.note || 'Welcome Bonus' });
+                });
+
+                for (let i = 0; i < 60; i++) {
+                    const d = new Date(); d.setDate(d.getDate() - i);
+                    const dateStr = d.toISOString().split('T')[0];
+                    const saved = JSON.parse(localStorage.getItem('agv_t_' + dateStr) || '{}');
+                    const tasks = saved[currentUser.id] || [];
+                    if (tasks.length > 0 && tasks.some(t => t.done)) {
+                        const totalEarned = tasks.reduce((s, t) => s + (t.earned || 0), 0);
+                        const completed = tasks.filter(t => t.done).length;
+                        if (totalEarned > 0) {
+                            allTransactions.push({ type: 'task', amount: totalEarned, completed: completed, status: 'credited', date: new Date(dateStr).toISOString() });
+                        }
+                    }
+                }
+
+                allTransactions.sort((a, b) => new Date(b.date) - new Date(a.date));
+                renderHistory();
+
+            } catch (error) {
+                document.getElementById('historyList').innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-circle"></i><p>Error loading.</p></div>';
+            }
+        }
+
+        function renderHistory() {
+            const filtered = currentFilter === 'all' ? allTransactions : allTransactions.filter(t => t.type === currentFilter);
+
+            if (filtered.length === 0) {
+                document.getElementById('historyList').innerHTML = `<div class="empty-state"><i class="fas fa-inbox"></i><p>No ${currentFilter === 'all' ? '' : currentFilter} transactions yet</p></div>`;
+                return;
+            }
+
+            let html = '';
+            filtered.forEach((tx, i) => {
+                const date = new Date(tx.date);
+                const dateStr = date.toLocaleDateString('en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' }) + ' • ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+                let typeLabel, amountClass, amountPrefix;
+                switch (tx.type) {
+                    case 'deposit': typeLabel = '💳 Deposit'; amountClass = 'positive'; amountPrefix = '+'; break;
+                    case 'withdrawal': typeLabel = '💸 Withdrawal'; amountClass = 'negative'; amountPrefix = '-'; break;
+                    case 'task': typeLabel = '📝 Task Earnings'; amountClass = 'positive'; amountPrefix = '+'; break;
+                    case 'referral': typeLabel = '👥 Referral Bonus'; amountClass = 'positive'; amountPrefix = '+'; break;
+                    case 'bonus': typeLabel = '🎁 Welcome Bonus'; amountClass = 'positive'; amountPrefix = '+'; break;
+                    case 'plan': typeLabel = '💰 Plan Purchase'; amountClass = 'negative'; amountPrefix = '-'; break;
+                }
+
+                let statusBadge = '';
+                if (tx.status === 'pending') statusBadge = '<span class="status-pending">⏳ Pending</span>';
+                else if (tx.status === 'approved' || tx.status === 'credited') statusBadge = '<span class="status-approved">✅ Approved</span>';
+                else if (tx.status === 'rejected') statusBadge = '<span class="status-rejected">❌ Rejected</span>';
+
+                let detailHTML = '';
+                if (tx.type === 'deposit') { detailHTML = `Ref: ${tx.ref}`; if (tx.payerName) detailHTML += ` • From: ${tx.payerName}`; }
+                else if (tx.type === 'withdrawal') { detailHTML = `Fee: ${fmt(tx.fee)} • Net: ${fmt(tx.net)}`; if (tx.bankName) detailHTML += ` • ${tx.bankName}`; }
+                else if (tx.type === 'task') detailHTML = `${tx.completed || '?'}/5 Questions`;
+                else if (tx.type === 'referral') detailHTML = `From: ${tx.refereeName || 'Referral'}`;
+                else if (tx.type === 'plan') detailHTML = `Plan: ${tx.package || 'Purchase'}`;
+                else if (tx.type === 'bonus') detailHTML = tx.note || 'Welcome Bonus';
+
+                html += `
+                <div class="history-card ${tx.type}" style="animation-delay:${i * 0.03}s;">
+                    <div class="history-header">
+                        <span class="history-type">${typeLabel} ${statusBadge}</span>
+                        <span class="history-amount ${amountClass}">${amountPrefix}${fmt(tx.amount)}</span>
+                    </div>
+                    <div class="history-detail">${detailHTML}</div>
+                    <div class="history-date">${dateStr}</div>
+                </div>`;
+            });
+
+            document.getElementById('historyList').innerHTML = html;
+        }
+
+        function filterHistory(type) {
+            currentFilter = type;
+            document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            renderHistory();
+        }
+    </script>
+</body>
+</html>
