@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Plans - Agrimindvest</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+
+    <!-- Header -->
+    <header class="header">
+        <a href="home.html" class="logo"><i class="fas fa-seedling"></i> Agrimindvest</a>
+        <div class="icons">
+            <a href="profile.html"><i class="fas fa-user-circle"></i></a>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        
+        <!-- Back Button -->
+        <a href="home.html" style="color:var(--accent-light);text-decoration:none;display:flex;align-items:center;gap:5px;margin-bottom:15px;">
+            <i class="fas fa-arrow-left"></i> Back to Home
+        </a>
+
+        <h3 style="color:var(--accent-light);margin-bottom:15px;">📋 Investment Plans</h3>
+
+        <!-- Your Active Plans -->
+        <div id="myPlanSection" style="display:none;">
+            <h4 style="color:var(--text-dim);margin-bottom:8px;">🌟 YOUR ACTIVE PLANS</h4>
+            <div class="card" id="myPlanCard"></div>
+        </div>
+
+        <h4 style="color:var(--text-dim);margin-bottom:8px;">📊 AVAILABLE PLANS (Sorted by Price)</h4>
+        <div id="allPlansContainer">
+            <div style="text-align:center;padding:30px;">
+                <div class="spinner"></div>
+                <p style="color:var(--text-dim);margin-top:10px;">Loading plans...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav">
+        <a href="home.html" class="nav-item"><i class="fas fa-home"></i><span>Home</span></a>
+        <a href="plans.html" class="nav-item active"><i class="fas fa-layer-group"></i><span>Plans</span></a>
+        <a href="deposit.html" class="nav-item"><i class="fas fa-credit-card"></i><span>Deposit</span></a>
+        <a href="tasks.html" class="nav-item"><i class="fas fa-tasks"></i><span>Tasks</span></a>
+        <a href="profile.html" class="nav-item"><i class="fas fa-user"></i><span>Profile</span></a>
+    </nav>
+
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="assets/js/firebase.js"></script>
+    <script>
+        // ============ CHECK AUTH ============
+        const user = checkAuth();
+        if (!user) { window.location.href = 'login.html'; }
+
+        let currentUser = user;
+        let allPlans = {};
+        const planLimits = {
+            sprout: 1, sproutplus: 1, sapling: 3, growth: 3,
+            harvest: 3, farmer: 3, pro: 3, elite: 3,
+            premier: 3, executive: 3, investor: 3, legend: 3
+        };
+
+        // ============ LOAD PLANS ============
+        async function loadPlans() {
+            try {
+                currentUser = await refreshUser();
+                allPlans = await getAllPlans();
+
+                // Show active plans
+                if (currentUser.ownedPlans && currentUser.ownedPlans.length > 0) {
+                    document.getElementById('myPlanSection').style.display = 'block';
+                    
+                    const planCounts = {};
+                    (currentUser.ownedPlans || []).forEach(p => {
+                        planCounts[p] = (planCounts[p] || 0) + 1;
+                    });
+
+                    let activeHTML = '';
+                    let totalPerQ = 0;
+                    Object.keys(planCounts).forEach(key => {
+                        if (allPlans[key]) {
+                            const p = allPlans[key];
+                            const contribution = p.perQ * planCounts[key];
+                            totalPerQ += contribution;
+                            activeHTML += `
+                            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);">
+                                <span style="color:var(--accent-light);">✅ ${p.name} x${planCounts[key]}</span>
+                                <span style="color:var(--gold);">₦${contribution}/Q</span>
+                            </div>`;
+                        }
+                    });
+                    activeHTML += `<div style="display:flex;justify-content:space-between;padding-top:10px;font-weight:700;">
+                        <span>💰 Total:</span><span style="color:var(--gold);">₦${totalPerQ}/Q • Daily: ₦${totalPerQ * 5}</span>
+                    </div>`;
+                    
+                    document.getElementById('myPlanCard').innerHTML = activeHTML;
+                } else {
+                    document.getElementById('myPlanSection').style.display = 'none';
+                }
+
+                // Show all plans sorted by price
+                const sortedPlans = Object.keys(allPlans).sort((a, b) => 
+                    (allPlans[a].price || 0) - (allPlans[b].price || 0)
+                );
+
+                let plansHTML = '';
+
+                if (sortedPlans.length === 0) {
+                    plansHTML = '<p style="color:var(--text-dim);text-align:center;">No plans available yet.</p>';
+                } else {
+                    sortedPlans.forEach(key => {
+                        const p = allPlans[key];
+                        const limit = planLimits[key] || 3;
+                        const purchased = (currentUser.ownedPlans || []).filter(x => x === key).length;
+                        const isMaxed = purchased >= limit;
+                        const status = p.status || 'active';
+
+                        let statusIcon, statusClass, buttonHTML;
+
+                        if (status === 'disabled') {
+                            statusIcon = '🔒';
+                            statusClass = 'locked';
+                            buttonHTML = '<span class="plan-badge badge-locked">Coming Soon</span>';
+                        } else if (status === 'soldout') {
+                            statusIcon = '🔴';
+                            statusClass = 'sold-out';
+                            buttonHTML = '<span class="plan-badge badge-sold">Sold Out</span>';
+                        } else if (isMaxed) {
+                            statusIcon = '✅';
+                            statusClass = '';
+                            buttonHTML = `<span class="plan-badge badge-active">Maxed ${purchased}/${limit}</span>`;
+                        } else if (purchased > 0) {
+                            statusIcon = '🟢';
+                            statusClass = '';
+                            buttonHTML = `<span style="font-size:0.75em;color:var(--text-dim);">Purchased: ${purchased}/${limit}</span>
+                                         <button class="btn btn-primary btn-sm" onclick="invest('${key}')">Invest Again</button>`;
+                        } else {
+                            statusIcon = '🟢';
+                            statusClass = '';
+                            buttonHTML = `<button class="btn btn-primary btn-sm" onclick="invest('${key}')">Invest Now</button>`;
+                        }
+
+                        plansHTML += `
+                        <div class="plan-card ${statusClass}" style="animation-delay:${sortedPlans.indexOf(key) * 0.05}s;">
+                            <div class="plan-row">
+                                <span class="plan-name">${statusIcon} ${p.name}</span>
+                                <span class="plan-price">${fmt(p.price)}</span>
+                            </div>
+                            <div class="plan-info">
+                                <div>Per Question: <span>${fmt(p.perQ)}</span></div>
+                                <div>Daily: <span>${fmt(p.daily)}</span></div>
+                            </div>
+                            <div class="plan-info">
+                                <div>Max Purchases: <span>${limit}x</span></div>
+                                <div>Your Purchases: <span>${purchased}/${limit}</span></div>
+                            </div>
+                            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;">
+                                ${buttonHTML}
+                            </div>
+                        </div>`;
+                    });
+                }
+
+                document.getElementById('allPlansContainer').innerHTML = plansHTML;
+                staggerCards('.plan-card', 0.06);
+
+            } catch (error) {
+                console.error('Load plans error:', error);
+                document.getElementById('allPlansContainer').innerHTML = '<p style="color:var(--text-dim);text-align:center;">Error loading plans.</p>';
+            }
+        }
+
+        // ============ INVEST ============
+        async function invest(planKey) {
+            const plan = allPlans[planKey];
+            if (!plan) return toast('Plan not found');
+            if (plan.status === 'disabled') return toast('This plan is currently unavailable');
+            if (plan.status === 'soldout') return toast('This plan is sold out');
+
+            const limit = planLimits[planKey] || 3;
+            const purchased = (currentUser.ownedPlans || []).filter(x => x === planKey).length;
+            if (purchased >= limit) return toast('You have reached the maximum purchases for this plan');
+
+            if ((currentUser.balance || 0) < plan.price) {
+                return toast('❌ Insufficient balance. Need: ' + fmt(plan.price) + '. Please deposit first.');
+            }
+
+            if (!confirm(`Invest ${fmt(plan.price)} for ${plan.name}?\n\nPer Question: ${fmt(plan.perQ)}\nDaily Potential: ${fmt(plan.daily)}\n\nYour balance: ${fmt(currentUser.balance)}`)) return;
+
+            try {
+                await updateDoc('users', currentUser.id, {
+                    balance: firebase.firestore.FieldValue.increment(-plan.price)
+                });
+
+                const ownedPlans = [...(currentUser.ownedPlans || []), planKey];
+                const expiryDate = new Date();
+                expiryDate.setDate(expiryDate.getDate() + 60);
+
+                await updateDoc('users', currentUser.id, {
+                    ownedPlans: ownedPlans,
+                    plan: planKey,
+                    expiryDate: expiryDate.toISOString(),
+                    invested: true,
+                    investmentAmount: (currentUser.investmentAmount || 0) + plan.price
+                });
+
+                await db.collection('payments').add({
+                    userId: currentUser.id, userName: currentUser.name,
+                    amount: plan.price, package: planKey,
+                    date: new Date().toISOString(), status: 'approved', type: 'balance'
+                });
+
+                // Referral bonus
+                if (currentUser.referredBy && currentUser.referredBy !== 'ADMIN') {
+                    const referrer = await getDoc('users', currentUser.referredBy);
+                    if (referrer && hasActivePlan(referrer)) {
+                        const bonus = Math.floor(plan.price * 0.10);
+                        await updateDoc('users', currentUser.referredBy, {
+                            refEarnings: firebase.firestore.FieldValue.increment(bonus),
+                            balance: firebase.firestore.FieldValue.increment(bonus)
+                        });
+                        await db.collection('referrals').add({
+                            referrerId: currentUser.referredBy, refereeId: currentUser.id,
+                            refereeName: currentUser.name, earned: bonus,
+                            package: planKey, date: new Date().toISOString(),
+                            level: 1, status: 'credited'
+                        });
+                    }
+                }
+
+                currentUser.balance = (currentUser.balance || 0) - plan.price;
+                currentUser.ownedPlans = ownedPlans;
+                localStorage.setItem('agv_u', JSON.stringify(currentUser));
+
+                toast('✅ Invested in ' + plan.name + '! Balance: ' + fmt(currentUser.balance));
+                loadPlans();
+
+            } catch (error) {
+                console.error('Invest error:', error);
+                toast('Investment failed. Please try again.');
+            }
+        }
+
+        // ============ INIT ============
+        window.addEventListener('load', loadPlans);
+    </script>
+</body>
+</html>
