@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Tasks - Agrimindvest</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="assets/css/style.css">
+    <style>
+        .task-container { max-width: 600px; margin: 0 auto; }
+
+        .progress-section { text-align: center; margin-bottom: 20px; }
+
+        .article-card {
+            background: var(--card);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border);
+            max-height: 300px;
+            overflow-y: auto;
+            line-height: 1.8;
+            font-size: 0.95em;
+        }
+
+        .article-card h4 { color: var(--accent-light); margin-bottom: 10px; }
+
+        .timer-section { text-align: center; margin-bottom: 20px; }
+
+        .timer-display {
+            font-size: 2.5em;
+            font-weight: 800;
+            color: var(--gold);
+            margin: 10px 0;
+            transition: color 0.3s;
+        }
+
+        .timer-display.warning { color: var(--warning); animation: timerPulse 0.5s infinite; }
+        .timer-display.danger { color: var(--danger); animation: timerPulse 0.3s infinite; }
+
+        @keyframes timerPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .quiz-section { display: none; }
+        .quiz-section.active { display: block; animation: fadeSlideUp 0.4s ease; }
+
+        @keyframes fadeSlideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .question-card {
+            background: var(--card);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border: 1px solid var(--accent);
+        }
+
+        .question-worth {
+            color: var(--gold);
+            font-weight: 700;
+            font-size: 0.9em;
+            margin-bottom: 10px;
+        }
+
+        .all-done-card { text-align: center; padding: 30px; }
+
+        .all-done-card .done-icon {
+            font-size: 5em;
+            color: var(--success);
+            animation: bounceIn 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .task-history-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <header class="header">
+        <a href="home.html" class="logo"><i class="fas fa-seedling"></i> Agrimindvest</a>
+        <div class="icons">
+            <a href="profile.html"><i class="fas fa-user-circle"></i></a>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        
+        <a href="home.html" style="color:var(--accent-light);text-decoration:none;display:flex;align-items:center;gap:5px;margin-bottom:15px;">
+            <i class="fas fa-arrow-left"></i> Back to Home
+        </a>
+
+        <div class="task-container">
+
+            <!-- NO ACTIVE PLAN -->
+            <div id="noPlanSection" class="hidden">
+                <div class="card" style="text-align:center;">
+                    <i class="fas fa-lock" style="font-size:3em;color:var(--warning);margin-bottom:15px;"></i>
+                    <h3 style="color:var(--warning);">No Active Plan</h3>
+                    <p style="color:var(--text-dim);margin-bottom:15px;">You need to invest in a plan to start earning from tasks.</p>
+                    <a href="plans.html" class="btn btn-primary btn-block">📋 View Plans</a>
+                </div>
+            </div>
+
+            <!-- TASK SECTION -->
+            <div id="taskSection">
+                
+                <!-- Progress -->
+                <div class="progress-section">
+                    <div class="progress-label">📊 Progress: <span id="progressText">0/5</span> Completed</div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill" style="width:0%;"></div>
+                    </div>
+                    <p style="color:var(--text-dim);">💰 Earned Today: <strong style="color:var(--gold);" id="earnedToday">₦0</strong></p>
+                </div>
+
+                <!-- Instructions -->
+                <div class="info-box" id="taskInstructions">
+                    <h4>📋 TASK INSTRUCTIONS</h4>
+                    <ul>
+                        <li><i class="fas fa-check-circle"></i> Read the article for 10 seconds to unlock the quiz</li>
+                        <li><i class="fas fa-check-circle"></i> Wrong answer? Try again until correct - NO penalties!</li>
+                        <li><i class="fas fa-check-circle"></i> Earn your full payout when you answer correctly</li>
+                        <li><i class="fas fa-check-circle"></i> 5 questions per day • Expires at midnight</li>
+                    </ul>
+                </div>
+
+                <!-- Reading Phase -->
+                <div id="readingPhase">
+                    <div class="article-card" id="articleContent">
+                        <h4 id="articleTitle">Loading article...</h4>
+                        <p id="articleBody">Please wait...</p>
+                    </div>
+
+                    <div class="timer-section">
+                        <p style="color:var(--text-dim);">⏰ Read for 10 seconds before quiz unlocks</p>
+                        <div class="timer-display" id="timerDisplay">10</div>
+                        <div class="timer-bar">
+                            <div class="timer-fill" id="timerFill" style="width:100%;"></div>
+                        </div>
+                    </div>
+
+                    <button class="btn btn-primary btn-block" id="startQuizBtn" disabled onclick="startQuiz()">
+                        🔒 START QUIZ (Wait for timer)
+                    </button>
+                </div>
+
+                <!-- Quiz Phase -->
+                <div class="quiz-section" id="quizPhase">
+                    <div class="question-card">
+                        <div class="question-worth">
+                            ❓ Question <span id="qNumber">1</span> of 5 • 💰 Worth: <span id="qWorth">₦0</span>
+                        </div>
+                        <p style="font-weight:600;margin-bottom:15px;font-size:1em;" id="questionText">Loading...</p>
+                        <div class="options-list" id="optionsList"></div>
+                        <button class="btn btn-primary btn-block" id="submitBtn" style="margin-top:15px;" onclick="submitAnswer()" disabled>Submit Answer</button>
+                    </div>
+                    <div id="quizFeedback" style="text-align:center;margin-top:15px;"></div>
+                </div>
+
+                <!-- All Done -->
+                <div id="allDonePhase" class="hidden">
+                    <div class="card all-done-card">
+                        <div class="done-icon">🎉</div>
+                        <h3 style="color:var(--success);margin:10px 0;">ALL TASKS COMPLETED!</h3>
+                        <p style="color:var(--text-dim);margin-bottom:15px;">Great job! You've completed all 5 questions for today.</p>
+                        
+                        <div style="background:var(--dark);border-radius:12px;padding:15px;margin-bottom:15px;">
+                            <h4 style="color:var(--accent-light);margin-bottom:10px;">📊 Today's Results</h4>
+                            <div id="taskResults"></div>
+                            <div style="border-top:1px solid var(--border);padding-top:10px;margin-top:10px;font-size:1.2em;">
+                                <strong>💰 Total Earned:</strong> <span style="color:var(--gold);font-weight:800;" id="totalEarned">₦0</span>
+                            </div>
+                        </div>
+                        <p style="color:var(--text-dim);">Come back tomorrow for new tasks!</p>
+                        <a href="home.html" class="btn btn-primary btn-block" style="margin-top:10px;">Back to Home</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav">
+        <a href="home.html" class="nav-item"><i class="fas fa-home"></i><span>Home</span></a>
+        <a href="plans.html" class="nav-item"><i class="fas fa-layer-group"></i><span>Plans</span></a>
+        <a href="deposit.html" class="nav-item"><i class="fas fa-credit-card"></i><span>Deposit</span></a>
+        <a href="tasks.html" class="nav-item active"><i class="fas fa-tasks"></i><span>Tasks</span></a>
+        <a href="profile.html" class="nav-item"><i class="fas fa-user"></i><span>Profile</span></a>
+    </nav>
+
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="assets/js/firebase.js"></script>
+    <script>
+        const user = checkAuth();
+        if (!user) window.location.href = 'login.html';
+
+        let currentUser = user;
+        let activePlans = {};
+        let perQuestionValue = 0;
+        let currentQuestionIndex = 1;
+        let currentArticle = null;
+        let currentQuestion = null;
+        let timerInterval = null;
+        let secondsLeft = 10;
+        let todayTasks = [];
+        let totalEarnedToday = 0;
+
+        const articles = [
+            {
+                title: 'Natural Pest Control for Maize Farming',
+                content: 'Maize is one of the most important cereal crops in Nigeria, providing food for millions. However, farmers face significant challenges from pests like stem borers and armyworms that can destroy up to 50% of harvest. Natural pest control methods are cost-effective and eco-friendly. Neem leaf application repels insects naturally without chemicals. Ash dusting creates a protective barrier on plants. Companion planting with desmodium grass pushes pests away while attracting beneficial insects. These traditional methods have been used for generations and are proven effective.',
+                qs: [
+                    {q:'What is the first natural method mentioned?',o:['Ash dusting','Neem leaf application','Companion planting'],a:1},
+                    {q:'Pests can destroy up to what percentage?',o:['25%','50%','75%'],a:1},
+                    {q:'What does ash dusting create?',o:['Protective barrier','Nutrients','Water retention'],a:0},
+                    {q:'Which plant is used for companion planting?',o:['Wheat grass','Desmodium grass','Elephant grass'],a:1},
+                    {q:'Why are natural methods preferred?',o:['Faster results','Cost-effective & eco-friendly','Less labor required'],a:1}
+                ]
+            },
+            {
+                title: 'Tomato Market Analysis in Nigeria',
+                content: 'Tomato farming is highly profitable in Nigeria but market prices fluctuate significantly throughout the year. During the dry season from November to March, prices can reach ₦50,000 per basket due to scarcity. In the rainy season from June to September, prices drop to ₦15,000-20,000 as supply increases dramatically. Key factors affecting prices include transportation costs, inadequate storage facilities, and demand from processing companies. Smart farmers who invest in proper storage can sell at premium prices during off-seasons.',
+                qs: [
+                    {q:'When are tomato prices highest?',o:['Dry season (Nov-Mar)','Rainy season (Jun-Sep)','Planting season'],a:0},
+                    {q:'What is the peak price per basket?',o:['₦30,000','₦50,000','₦70,000'],a:1},
+                    {q:'What causes price drops in rainy season?',o:['Increased supply','Decreased demand','Government intervention'],a:0},
+                    {q:'Which factor does NOT affect prices?',o:['Transportation costs','Storage facilities','Color of tomatoes'],a:2},
+                    {q:'How can farmers earn more?',o:['Sell immediately','Invest in proper storage','Reduce farming'],a:1}
+                ]
+            },
+            {
+                title: 'Irrigation Techniques for Dry Season Farming',
+                content: 'Water management is crucial for successful dry season farming in Nigeria. Drip irrigation delivers water directly to plant roots, saving up to 70% compared to traditional flooding methods. Sprinkler systems cover larger areas but lose significant water to evaporation. Mulching with crop residues helps retain soil moisture and reduces watering frequency. The best irrigation method depends on crop type, farm size, available water source, and budget.',
+                qs: [
+                    {q:'Which method saves up to 70% water?',o:['Drip irrigation','Sprinkler system','Flood irrigation'],a:0},
+                    {q:'What causes water loss in sprinklers?',o:['Evaporation','Root absorption','Soil type'],a:0},
+                    {q:'What is mulching used for?',o:['Adding fertilizer','Retaining soil moisture','Plowing soil'],a:1},
+                    {q:'What determines the best method?',o:['Crop type and farm size','Moon phase','Color of soil'],a:0},
+                    {q:'When is water management most crucial?',o:['Dry season','Rainy season','Harvest time'],a:0}
+                ]
+            }
+        ];
+
+        window.addEventListener('load', async () => {
+            currentUser = await refreshUser();
+            
+            if (!hasActivePlan(currentUser)) {
+                document.getElementById('noPlanSection').classList.remove('hidden');
+                document.getElementById('taskSection').classList.add('hidden');
+                return;
+            }
+
+            activePlans = await getActivePlans();
+            perQuestionValue = calculatePerQuestion(currentUser, activePlans);
+
+            const today = new Date().toISOString().split('T')[0];
+            const saved = JSON.parse(localStorage.getItem('agv_t_' + today) || '{}');
+            todayTasks = saved[currentUser.id] || [];
+            totalEarnedToday = todayTasks.reduce((s, t) => s + (t.earned || 0), 0);
+            currentQuestionIndex = todayTasks.filter(t => t.done).length + 1;
+
+            if (currentQuestionIndex > 5) {
+                showAllDone();
+            } else {
+                updateProgress();
+                loadNewQuestion();
+            }
+        });
+
+        function updateProgress() {
+            const done = todayTasks.filter(t => t.done).length;
+            document.getElementById('progressText').textContent = done + '/5';
+            document.getElementById('progressFill').style.width = (done / 5 * 100) + '%';
+            document.getElementById('earnedToday').textContent = fmt(totalEarnedToday);
+        }
+
+        function loadNewQuestion() {
+            const article = articles[Math.floor(Math.random() * articles.length)];
+            currentArticle = article;
+            currentQuestion = article.qs[currentQuestionIndex - 1];
+
+            document.getElementById('readingPhase').style.display = 'block';
+            document.getElementById('quizPhase').classList.remove('active');
+            document.getElementById('articleTitle').textContent = article.title;
+            document.getElementById('articleBody').textContent = article.content;
+            document.getElementById('qNumber').textContent = currentQuestionIndex;
+            document.getElementById('qWorth').textContent = fmt(perQuestionValue);
+
+            secondsLeft = 10;
+            document.getElementById('timerDisplay').textContent = secondsLeft;
+            document.getElementById('timerDisplay').className = 'timer-display';
+            document.getElementById('timerFill').style.width = '100%';
+            document.getElementById('startQuizBtn').disabled = true;
+            document.getElementById('startQuizBtn').textContent = '🔒 START QUIZ (Wait for timer)';
+            document.getElementById('startQuizBtn').classList.remove('btn-pulse');
+
+            if (timerInterval) clearInterval(timerInterval);
+            
+            timerInterval = setInterval(() => {
+                secondsLeft--;
+                document.getElementById('timerDisplay').textContent = secondsLeft;
+                document.getElementById('timerFill').style.width = (secondsLeft / 10 * 100) + '%';
+
+                if (secondsLeft <= 3) document.getElementById('timerDisplay').className = 'timer-display warning';
+                if (secondsLeft <= 1) document.getElementById('timerDisplay').className = 'timer-display danger';
+
+                if (secondsLeft <= 0) {
+                    clearInterval(timerInterval);
+                    document.getElementById('timerDisplay').textContent = '0';
+                    document.getElementById('startQuizBtn').disabled = false;
+                    document.getElementById('startQuizBtn').textContent = '✅ START QUIZ';
+                    document.getElementById('startQuizBtn').classList.add('btn-pulse');
+                }
+            }, 1000);
+        }
+
+        function startQuiz() {
+            document.getElementById('readingPhase').style.display = 'none';
+            document.getElementById('quizPhase').classList.add('active');
+            document.getElementById('questionText').textContent = currentQuestion.q;
+            document.getElementById('quizFeedback').innerHTML = '';
+
+            let optionsHTML = '';
+            currentQuestion.o.forEach((opt, i) => {
+                const isDisabled = currentQuestion._disabled && currentQuestion._disabled.includes(i);
+                optionsHTML += `
+                <div class="opt-btn ${isDisabled ? 'disabled' : ''}" id="opt-${i}" onclick="selectOption(${i})">
+                    <span class="opt-letter">${'ABC'[i]}</span> ${opt}
+                </div>`;
+            });
+            document.getElementById('optionsList').innerHTML = optionsHTML;
+            document.getElementById('submitBtn').disabled = true;
+            if (!currentQuestion._disabled) currentQuestion._disabled = [];
+        }
+
+        function selectOption(index) {
+            if (currentQuestion._disabled && currentQuestion._disabled.includes(index)) return;
+            document.querySelectorAll('.opt-btn').forEach(b => b.classList.remove('selected'));
+            document.getElementById('opt-' + index).classList.add('selected');
+            document.getElementById('submitBtn').disabled = false;
+        }
+
+        function submitAnswer() {
+            const selected = document.querySelector('.opt-btn.selected');
+            if (!selected) return;
+
+            const selectedIndex = parseInt(selected.id.split('-')[1]);
+            const isCorrect = selectedIndex === currentQuestion.a;
+
+            if (isCorrect) {
+                document.getElementById('opt-' + selectedIndex).classList.add('correct');
+                document.getElementById('quizFeedback').innerHTML = `
+                    <div style="color:var(--success);font-weight:700;font-size:1.2em;animation:bounceIn 0.5s;">
+                        ✅ Correct! +${fmt(perQuestionValue)} earned!
+                    </div>`;
+
+                todayTasks.push({ q: currentQuestionIndex, earned: perQuestionValue, done: true, retries: currentQuestion._disabled.length });
+                totalEarnedToday += perQuestionValue;
+
+                const today = new Date().toISOString().split('T')[0];
+                const saved = JSON.parse(localStorage.getItem('agv_t_' + today) || '{}');
+                saved[currentUser.id] = todayTasks;
+                localStorage.setItem('agv_t_' + today, JSON.stringify(saved));
+
+                db.collection('users').doc(currentUser.id).update({
+                    balance: firebase.firestore.FieldValue.increment(perQuestionValue),
+                    totalEarned: firebase.firestore.FieldValue.increment(perQuestionValue),
+                    tasksCompleted: firebase.firestore.FieldValue.increment(1)
+                });
+
+                currentUser.balance = (currentUser.balance || 0) + perQuestionValue;
+                localStorage.setItem('agv_u', JSON.stringify(currentUser));
+                updateProgress();
+
+                setTimeout(() => {
+                    currentQuestionIndex++;
+                    if (currentQuestionIndex > 5) { showAllDone(); }
+                    else { loadNewQuestion(); }
+                }, 1500);
+
+            } else {
+                if (!currentQuestion._disabled) currentQuestion._disabled = [];
+                currentQuestion._disabled.push(selectedIndex);
+
+                document.getElementById('opt-' + selectedIndex).classList.add('wrong');
+                document.getElementById('opt-' + selectedIndex).classList.add('disabled');
+                document.getElementById('quizFeedback').innerHTML = `
+                    <div style="color:var(--danger);font-weight:600;animation:shake 0.5s;">
+                        ❌ Wrong! Option ${'ABC'[selectedIndex]} disabled. Try again!
+                    </div>
+                    <div style="color:var(--text-dim);font-size:0.85em;margin-top:5px;">
+                        No penalty - full ₦${perQuestionValue} when correct!
+                    </div>`;
+                document.getElementById('submitBtn').disabled = true;
+                document.querySelectorAll('.opt-btn').forEach(b => b.classList.remove('selected'));
+            }
+        }
+
+        function showAllDone() {
+            document.getElementById('readingPhase').style.display = 'none';
+            document.getElementById('quizPhase').classList.remove('active');
+            document.getElementById('allDonePhase').classList.remove('hidden');
+            updateProgress();
+            document.getElementById('progressFill').style.width = '100%';
+            document.getElementById('totalEarned').textContent = fmt(totalEarnedToday);
+
+            let resultsHTML = '';
+            todayTasks.forEach(t => {
+                resultsHTML += `<div class="task-history-item"><span>Q${t.q}:</span><span style="color:var(--success);">✅ ₦${t.earned}</span></div>`;
+            });
+            document.getElementById('taskResults').innerHTML = resultsHTML;
+        }
+    </script>
+</body>
+</html>
